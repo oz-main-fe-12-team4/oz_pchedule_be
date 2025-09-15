@@ -30,7 +30,7 @@ class Report(models.Model):
     user_id = models.ForeignKey("user.User", on_delete=models.CASCADE)
     post_id = models.ForeignKey("schedule.Post", on_delete=models.CASCADE)
     reason = models.CharField(max_length=50, null=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=False)
 
     class Meta:
         db_table = "report"
