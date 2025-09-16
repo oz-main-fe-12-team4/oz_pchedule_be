@@ -322,4 +322,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/windows,macos,django,python
+# End of https://www.toptal.com/developers/gitignore/api/windows,macos,django,python.idea/
