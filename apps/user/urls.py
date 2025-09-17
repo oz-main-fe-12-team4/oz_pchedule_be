@@ -1,18 +1,22 @@
 from django.urls import path
 from .views import (
-    RegisterView,
-    UserListCreateView,
-    UserDetailView,
-    LoginAttemptListView,
-    TokenListCreateView,
-    AccessTokenBlacklistListCreateView,
+    SignupView,
+    LoginView,
+    SocialLoginView,
+    LogoutView,
+    UserInfoView,
+    UserEditView,
+    UserDeleteView,
+    TokenRefreshView,
 )
 
 urlpatterns = [
-    path("register/", RegisterView.as_view(), name="register"),
-    path("users/", UserListCreateView.as_view(), name="user-list"),
-    path("users/<int:pk>/", UserDetailView.as_view(), name="user-detail"),
-    path("login-attempts/", LoginAttemptListView.as_view(), name="login-attempt-list"),
-    path("tokens/", TokenListCreateView.as_view(), name="token-list"),
-    path("blacklist/", AccessTokenBlacklistListCreateView.as_view(), name="blacklist-list"),
+    path("user/signup", SignupView.as_view(), name="signup"),
+    path("user/login", LoginView.as_view(), name="login"),
+    path("user/social-login", SocialLoginView.as_view(), name="social-login"),
+    path("user/<int:user_id>/logout", LogoutView.as_view(), name="logout"),
+    path("user/<int:user_id>/info", UserInfoView.as_view(), name="user-info"),
+    path("user/<int:user_id>/edit", UserEditView.as_view(), name="user-edit"),
+    path("user/<int:user_id>/delete", UserDeleteView.as_view(), name="user-delete"),
+    path("token/refresh", TokenRefreshView.as_view(), name="token-refresh"),
 ]
