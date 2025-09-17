@@ -1,10 +1,12 @@
 from django.db import models
+from apps.user.models import User
+from apps.post.models import Post
 
 
 class Like(models.Model):
     like_id = models.IntegerField(primary_key=True, auto_created=True)
-    user_id = models.ForeignKey("user.User", on_delete=models.CASCADE)
-    post_id = models.ForeignKey("schedule.Post", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
 
     class Meta:
         db_table = "like"
@@ -15,8 +17,8 @@ class Like(models.Model):
 
 class Favorite(models.Model):
     favorite_id = models.IntegerField(primary_key=True, auto_created=True)
-    user_id = models.ForeignKey("user.User", on_delete=models.CASCADE)
-    post_id = models.ForeignKey("schedule.Post", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
 
     class Meta:
         db_table = "favorite"
@@ -27,8 +29,8 @@ class Favorite(models.Model):
 
 class Report(models.Model):
     report_id = models.IntegerField(primary_key=True, auto_created=True)
-    user_id = models.ForeignKey("user.User", on_delete=models.CASCADE)
-    post_id = models.ForeignKey("schedule.Post", on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, on_delete=models.CASCADE)
     reason = models.CharField(max_length=50, null=False)
     created_at = models.DateTimeField(auto_now_add=True, null=False)
 
