@@ -7,6 +7,7 @@ class RecurrenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recurrence
         fields = "__all__"
+        read_only_fields = ["post"]  # post는 생성 시 perform_create에서 지정
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
@@ -23,7 +24,9 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "description",
             "start_time",
             "end_time",
+            "alert_minute",
             "is_completed",
+            "completed_at",
             "recurrences",
             "created_at",
             "updated_at",

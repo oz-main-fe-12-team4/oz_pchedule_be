@@ -4,30 +4,34 @@ from apps.user.models import User
 
 class Post(models.Model):
     CATEGORY_CHOICES = [
+        ("일상", "일상"),
+        ("취미/여가", "취미/여가"),
         ("여행", "여행"),
-        ("일정", "일정"),
+        ("자기 계발/학습", "자기 계발/학습"),
+        ("이벤트", "이벤트"),
         ("기타", "기타"),
     ]
 
     PRIORITY_CHOICES = [
         ("긴급", "긴급"),
-        ("높음", "높음"),
-        ("보통", "보통"),
         ("낮음", "낮음"),
-        ("여유", "여유"),
+        ("중간", "중간"),
+        ("높음", "높음"),
+        ("보류", "보류"),
+    ]
+
+    SHARE_CHOICES = [
+        ("private", "비공개"),
+        ("public", "전체 공개"),
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="posts")
-    title = models.CharField(max_length=255)
-
+    title = models.CharField(max_length=50)
     start_period = models.DateTimeField(null=True, blank=True)
     end_period = models.DateTimeField(null=True, blank=True)
-    is_someday = models.BooleanField(default=False)
-
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
-
-    is_shared = models.BooleanField(default=False)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="중간")
+    share_type = models.CharField(max_length=20, choices=SHARE_CHOICES, default="private")
     is_recurrence = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,23 +39,3 @@ class Post(models.Model):
 
     def __str__(self):
         return self.title
-
-
-# STO 기능: 좋아요, 북마크, 신고
-class PostLike(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="liked_posts")
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="likes")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class PostFavorite(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="favorited_posts")
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="favorites")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-
-class PostReport(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="reported_posts")
-    post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name="reports")
-    reason = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
