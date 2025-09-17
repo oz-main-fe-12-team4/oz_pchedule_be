@@ -11,17 +11,29 @@ class Schedule(models.Model):
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
     is_completed = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def __str__(self):
+        return self.title
+
 
 class Recurrence(models.Model):
-    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="recurrences")
-    RECURRENCE_TYPE = [
-        ("daily", "Daily"),
-        ("weekly", "Weekly"),
-        ("monthly", "Monthly"),
+    DAILY = "daily"
+    WEEKLY = "weekly"
+    MONTHLY = "monthly"
+
+    RECURRENCE_TYPE_CHOICES = [
+        (DAILY, "Daily"),
+        (WEEKLY, "Weekly"),
+        (MONTHLY, "Monthly"),
     ]
-    recurrence_type = models.CharField(max_length=10, choices=RECURRENCE_TYPE)
-    interval = models.PositiveIntegerField(default=1)  # 매 1일, 매 2주 등
+
+    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="recurrences")
+    recurrence_type = models.CharField(max_length=10, choices=RECURRENCE_TYPE_CHOICES)
+    interval = models.PositiveIntegerField(default=1)
     end_date = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.schedule.title} ({self.recurrence_type})"

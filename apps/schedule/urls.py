@@ -5,6 +5,7 @@ from .views import (
     ScheduleDetailView,
     RecurrenceCreateView,
     ScheduleCompleteView,
+    schedule_overlap_check,
 )
 
 urlpatterns = [
@@ -13,4 +14,5 @@ urlpatterns = [
     path("<int:pk>/", ScheduleDetailView.as_view(), name="schedule-detail"),
     path("<int:pk>/complete/", ScheduleCompleteView.as_view(), name="schedule-complete"),
     path("recurrence/create/", RecurrenceCreateView.as_view(), name="recurrence-create"),
+    path("check-overlap/", schedule_overlap_check, name="schedule-overlap-check"),
 ]
