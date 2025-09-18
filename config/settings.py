@@ -45,12 +45,14 @@ PROJECT_APPS = [
     "apps.schedule",
     "apps.interactions",
     "apps.notification",
+    "apps.post",
 ]
 
 THIRD_PARTY_APPS = [
     "rest_framework",
     "drf_yasg",
     "drf_spectacular",
+    "rest_framework_simplejwt",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
