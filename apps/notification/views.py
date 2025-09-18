@@ -21,7 +21,7 @@ class NotificationListAPIView(generics.GenericAPIView):
 class NotificationReadAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
-    def post(self, request, notification_id, *args, **kwargs):
+    def patch(self, request, notification_id, *args, **kwargs):
         # 특정 알림 가져오기
         notification = generics.get_object_or_404(Notification, id=notification_id, user=request.user, is_deleted=False)
 
