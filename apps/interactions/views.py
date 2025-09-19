@@ -1,64 +1,116 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from .models import Favorite, Like, Post
-from .serializers import FavoriteSerializer, LikeSerializer, ReportSerializer
+from .models import Bookmark, Like, Report
+from apps.schedule.models import Schedule
+from rest_framework.exceptions import NotFound
+from .serializers import ReportSerializer
 
 
-class PostLikeAPIView(generics.GenericAPIView):
+class ScheduleLikeAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = LikeSerializer
 
-    def post(self, request, post_id):
-        """Like a post using serializer"""
-        post = generics.get_object_or_404(Post, id=post_id)
-        serializer = self.get_serializer(data={})
-        serializer.is_valid(raise_exception=True)
-        serializer.save(post=post, user=request.user)
-        return Response({"message": "좋아요에 추가되었습니다."}, status=status.HTTP_201_CREATED)
+    def post(self, request, schedule_id):
+        schedule = Schedule.objects.filter(id=schedule_id).first()
+        if not schedule:
+            raise NotFound(detail={"error": "해당 일정이 존재하지 않습니다."})
 
-    def delete(self, request, post_id):
-        """Unlike a post safely"""
-        post = generics.get_object_or_404(Post, id=post_id)
-        like = Like.objects.filter(user=request.user, post=post).first()
-        if like:
-            like.delete()
-            return Response({"message": "좋아요에서 제거되었습니다."}, status=status.HTTP_200_OK)
-        return Response({"message": "좋아요에 추가되어있지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            Like.objects.get_or_create(user=request.user, schedule=schedule)
+            return Response(
+                {"message": "좋아요에 추가되었습니다."},
+                status=status.HTTP_201_CREATED,
+            )
+        except Exception:
+            return Response(
+                {"error": "예기치 못한 서버 오류가 발생했습니다."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+    def delete(self, request, schedule_id):
+        try:
+            schedule = Schedule.objects.filter(id=schedule_id).first()
+            if not schedule:
+                raise NotFound(detail={"error": "해당 일정이 존재하지 않습니다."})
+
+            Like.objects.filter(user=request.user, schedule=schedule).delete()
+
+            return Response(
+                {"message": "좋아요에서 제거되었습니다."},
+                status=status.HTTP_200_OK,
+            )
+
+        except NotFound as e:
+            return Response(e.detail, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception:
+            return Response(
+                {"error": "예기치 못한 서버 오류가 발생했습니다."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
-class PostFavoriteAPIView(generics.GenericAPIView):
+class ScheduleBookmarkAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = FavoriteSerializer
 
-    def post(self, request, post_id):
-        """Favorite a post using serializer"""
-        post = generics.get_object_or_404(Post, id=post_id)
-        serializer = self.get_serializer(data={})
-        serializer.is_valid(raise_exception=True)
-        serializer.save(post=post, user=request.user)
+    def post(self, request, schedule_id):
+        try:
+            schedule = Schedule.objects.filter(id=schedule_id).first()
+            if not schedule:
+                raise NotFound(detail={"error": "해당 일정이 존재하지 않습니다."})
 
-        return Response({"message": "찜하기에 추가되었습니다."}, status=status.HTTP_201_CREATED)
+            Bookmark.objects.get_or_create(user=request.user, schedule=schedule)
 
-    def delete(self, request, post_id):
-        """Unfavorite a post safely"""
-        post = generics.get_object_or_404(Post, id=post_id)
-        favorite = Favorite.objects.filter(user=request.user, post=post).first()
-        if favorite:
-            favorite.delete()
-            return Response({"message": "찜하기에서 제거되었습니다."}, status=status.HTTP_200_OK)
-        return Response({"message": "찜하기에 추가되어있지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"message": "찜하기에 추가되었습니다."},
+                status=status.HTTP_201_CREATED,
+            )
+
+        except NotFound as e:
+            return Response(e.detail, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception:
+            return Response(
+                {"error": "예기치 못한 서버 오류가 발생했습니다."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
 
-class PostReportAPIView(generics.GenericAPIView):
+class ScheduleReportAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = ReportSerializer
 
-    def post(self, request, post_id):
-        """Report a post"""
-        post = generics.get_object_or_404(Post, id=post_id)
-        serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(user=request.user, post=post)
-            return Response({"message": "신고가 접수되었습니다."}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request, schedule_id):
+        try:
+            schedule = Schedule.objects.filter(id=schedule_id).first()
+            if not schedule:
+                raise NotFound(detail={"error": "해당 일정이 존재하지 않습니다."})
+
+            if Report.objects.filter(schedule=schedule).exists():
+                return Response(
+                    {"error": "이미 신고처리된 일정입니다."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+
+            serializer = self.get_serializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {"error": "잘못된 형식의 요청입니다."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            serializer.save(user=request.user, schedule=schedule)
+
+            return Response(
+                {"message": "신고가 접수되었습니다."},
+                status=status.HTTP_201_CREATED,
+            )
+
+        except NotFound as e:
+            return Response(e.detail, status=status.HTTP_404_NOT_FOUND)
+
+        except Exception:
+            return Response(
+                {"error": "예기치 못한 서버 오류가 발생했습니다."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

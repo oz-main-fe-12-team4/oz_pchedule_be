@@ -1,35 +1,17 @@
 from rest_framework import serializers
-from .models import Like, Favorite, Report
-
-
-class LikeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Like
-        fields = []
-
-    def create(self, validated_data):
-        user = self.context["request"].user
-        post = self.context["post"]
-        return Report.objects.create(user=user, post=post, **validated_data)
-
-
-class FavoriteSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Favorite
-        fields = []
-
-    def create(self, validated_data):
-        user = self.context["request"].user
-        post = self.context["post"]
-        return Favorite.objects.create(user=user, post=post, **validated_data)
+from .models import Report
 
 
 class ReportSerializer(serializers.ModelSerializer):
+    report_id = serializers.IntegerField(read_only=True)
+    reason = serializers.ChoiceField(choices=Report.REASONS)
+    created_at = serializers.DateTimeField(read_only=True)
+
     class Meta:
         model = Report
-        fields = ["reason"]
+        fields = ["report_id", "reason", "created_at"]
 
     def create(self, validated_data):
         user = self.context["request"].user
-        post = self.context["post"]
-        return Report.objects.create(user=user, post=post, **validated_data)
+        schedule = self.context["schedule"]
+        return Report.objects.create(user=user, schedule=schedule, **validated_data)
