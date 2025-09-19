@@ -1,16 +1,11 @@
-from django.urls import path
-from .views import (
-    ScheduleCreateView,
-    ScheduleListView,
-    ScheduleDetailView,
-    RecurrenceCreateView,
-    ScheduleCompleteView,
-)
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ScheduleViewSet, RecurrenceViewSet
+
+router = DefaultRouter()
+router.register(r"schedules", ScheduleViewSet, basename="schedule")
+router.register(r"recurrences", RecurrenceViewSet, basename="recurrence")
 
 urlpatterns = [
-    path("create/", ScheduleCreateView.as_view(), name="schedule-create"),
-    path("list/", ScheduleListView.as_view(), name="schedule-list"),
-    path("<int:pk>/", ScheduleDetailView.as_view(), name="schedule-detail"),
-    path("<int:pk>/complete/", ScheduleCompleteView.as_view(), name="schedule-complete"),
-    path("recurrence/create/", RecurrenceCreateView.as_view(), name="recurrence-create"),
+    path("", include(router.urls)),
 ]

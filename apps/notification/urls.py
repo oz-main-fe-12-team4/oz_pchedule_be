@@ -4,6 +4,6 @@ from apps.notification.views import NotificationListAPIView, NotificationReadAPI
 
 urlpatterns = [
     path("list/", NotificationListAPIView.as_view(), name="notification-list"),
-    path("read/", NotificationReadAPIView.as_view(), name="notification-read"),
-    path("delete/", NotificationDeleteAPIView.as_view(), name="notification-delete"),
+    path("<int:pk>/read/", NotificationReadAPIView.as_view(), name="notification-read"),
+    path("<int:pk>/delete/", NotificationDeleteAPIView.as_view(), name="notification-delete"),
 ]

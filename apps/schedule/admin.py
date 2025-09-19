@@ -4,7 +4,7 @@ from .models import Schedule
 
 @admin.register(Schedule)
 class ScheduleAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "user", "start_time", "end_time", "is_completed", "created_at")
-    list_filter = ("is_completed", "start_time", "end_time")
-    search_fields = ("title", "user__email")
-    ordering = ("-created_at",)
+    list_display = ("id", "title", "user", "start_period", "end_period", "is_someday")
+    search_fields = ("title", "user__username")
+    list_filter = ("is_someday", "start_period")
+    ordering = ("-id",)

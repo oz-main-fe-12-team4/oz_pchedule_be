@@ -28,11 +28,19 @@ class Favorite(models.Model):
 
 
 class Report(models.Model):
+    REASON = [
+        ("Inappropriate name", "부적절한 이름"),
+        ("Inappropriate content", "부적절한 내용"),
+        ("Spamming", "도배"),
+        ("Profanity", "욕설"),
+        ("Sexually explicit content", "선정적인 내용"),
+    ]
+
     report_id = models.IntegerField(primary_key=True, auto_created=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    reason = models.CharField(max_length=50, null=False)
-    created_at = models.DateTimeField(auto_now_add=True, null=False)
+    reason = models.CharField(max_length=50, choices=REASON)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "report"
