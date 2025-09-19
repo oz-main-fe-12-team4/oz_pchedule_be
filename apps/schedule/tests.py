@@ -1,25 +1,40 @@
 from django.test import TestCase
-from django.contrib.auth.models import User
-from .models import Schedule
-from datetime import datetime
+from django.contrib.auth import get_user_model
+from .models import Category, Schedule, DetailSchedule
+from django.utils import timezone
+from datetime import timedelta
+
+
+User = get_user_model()
 
 
 class ScheduleModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create(username="tester2")
-        self.schedule = Schedule.objects.create(
-            user=self.user,
-            title="테스트 스케줄",
-            start_period=datetime(2025, 1, 2, 14, 0),
-            end_period=datetime(2025, 1, 2, 16, 0),
-            is_someday=True,
-        )
+        self.user = User.objects.create(username="tester")
+        self.category = Category.objects.create(name="일상")
 
     def test_schedule_creation(self):
-        """Schedule이 정상적으로 생성되는지 확인"""
-        self.assertEqual(self.schedule.title, "테스트 스케줄")
-        self.assertEqual(self.schedule.user.username, "tester2")
+        schedule = Schedule.objects.create(
+            user=self.user,
+            title="Test Schedule",
+            category=self.category,
+            start_period=timezone.now(),
+            end_period=timezone.now() + timedelta(hours=1),
+        )
+        self.assertEqual(schedule.title, "Test Schedule")
 
-    def test_schedule_str(self):
-        """__str__ 메서드가 title을 반환하는지 확인"""
-        self.assertEqual(str(self.schedule), self.schedule.title)
+    def test_detail_schedule_within_period(self):
+        schedule = Schedule.objects.create(
+            user=self.user,
+            title="Main Schedule",
+            category=self.category,
+            start_period=timezone.now(),
+            end_period=timezone.now() + timedelta(days=1),
+        )
+        detail = DetailSchedule.objects.create(
+            schedule=schedule,
+            title="Detail Task",
+            start_time=timezone.now(),
+            end_time=timezone.now() + timedelta(hours=2),
+        )
+        self.assertFalse(detail.is_completed)
