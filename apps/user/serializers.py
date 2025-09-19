@@ -2,9 +2,11 @@ from rest_framework import serializers
 from .models import User, LoginAttempt, Token, AccessTokenBlacklist
 
 
-# 회원가입 / 유저 생성 시 사용
+# 회원가입 / 유저 생성
 class UserSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="id", read_only=True)  # user_id 반환
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
     password = serializers.CharField(write_only=True)
 
     class Meta:
@@ -15,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
             "password",
             "name",
             "profile_image",
+            "allow_notification",  # 명세서 기준 필요하다면 추가
             "created_at",
             "updated_at",
         ]
@@ -23,14 +26,15 @@ class UserSerializer(serializers.ModelSerializer):
 # 로그인 응답
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
-    data = serializers.DictField()  # {"access_token": "...", "refresh_token": "..."}
+    access_token = serializers.CharField()
+    refresh_token = serializers.CharField()
 
 
 # 내 정보 조회 응답
 class UserInfoSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source="id", read_only=True)
     total_like = serializers.IntegerField(default=0)
-    total_favorite = serializers.IntegerField(default=0)
+    total_bookmark = serializers.IntegerField(default=0)
 
     class Meta:
         model = User
@@ -39,26 +43,27 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "email",
             "name",
             "profile_image",
+            "allow_notification",
             "total_like",
-            "total_favorite",
+            "total_bookmark",
         ]
 
 
-# 로그인 시도 기록 (내부용)
-class LoginAttemptSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LoginAttempt
-        fields = "__all__"
-
-
-# 토큰 저장 (내부용)
+# 토큰
 class TokenSerializer(serializers.ModelSerializer):
     class Meta:
         model = Token
         fields = "__all__"
 
 
-# Access Token 블랙리스트 (내부용)
+# 로그인 시도 기록
+class LoginAttemptSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoginAttempt
+        fields = "__all__"
+
+
+# 블랙리스트 처리된 AccessToken
 class AccessTokenBlacklistSerializer(serializers.ModelSerializer):
     class Meta:
         model = AccessTokenBlacklist

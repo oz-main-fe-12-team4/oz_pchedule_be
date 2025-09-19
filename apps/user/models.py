@@ -19,6 +19,7 @@ class User(AbstractBaseUser):
     password = models.CharField(max_length=255, null=False, blank=False)
     name = models.CharField(max_length=20, unique=True, null=False, blank=False)
     profile_image = models.CharField(max_length=255, null=False, blank=False)
+    allow_notification = models.BooleanField(default=True, null=False)  # ✅ 추가됨
     created_at = models.DateTimeField(auto_now_add=True, null=False)
     updated_at = models.DateTimeField(auto_now=True, null=False)
     last_login = models.DateTimeField(blank=True, null=True)
