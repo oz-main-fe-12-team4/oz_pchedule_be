@@ -14,17 +14,17 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
+    user_id = models.BigAutoField(primary_key=True)  # PK, AUTO_INCREMENT
     email = models.EmailField(max_length=255, unique=True, null=False, blank=False)
-    password = models.CharField(max_length=255)
-    name = models.CharField(max_length=20, unique=True)
-    profile_image = models.CharField(max_length=255, blank=True, null=True)
-    allow_notification = models.BooleanField(default=True)
-    is_admin = models.BooleanField(default=False)
-    is_locked = models.BooleanField(default=False)
-    is_reported = models.BooleanField(default=False)
+    password = models.CharField(max_length=255, null=False, blank=False)
+    name = models.CharField(max_length=20, unique=True, null=False, blank=False)
+    profile_image = models.CharField(max_length=255, null=False, blank=False)
+    created_at = models.DateTimeField(auto_now_add=True, null=False)
+    updated_at = models.DateTimeField(auto_now=True, null=False)
     last_login = models.DateTimeField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_admin = models.BooleanField(default=False, null=False)
+    is_active = models.BooleanField(default=False, null=False)  # 계정 활성화 여부
+    is_reported = models.BooleanField(default=False, null=False)  # 신고 여부
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["name"]
@@ -33,7 +33,7 @@ class User(AbstractBaseUser):
 
 
 class LoginAttempt(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     login_attempt_time = models.DateTimeField(auto_now_add=True)
     is_success = models.BooleanField()
     ip_address = models.CharField(max_length=45)
