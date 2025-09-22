@@ -4,7 +4,7 @@ from .models import User, LoginAttempt, Token, AccessTokenBlacklist
 
 # 회원가입 / 유저 생성
 class UserSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source="id", read_only=True)  # user_id 반환
+    user_id = serializers.IntegerField(source="user_id", read_only=True)  # PK 매핑 명확히
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     password = serializers.CharField(write_only=True)
@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
             "password",
             "name",
             "profile_image",
-            "allow_notification",  # 명세서 기준 필요하다면 추가
+            "allow_notification",
             "created_at",
             "updated_at",
         ]
@@ -26,13 +26,12 @@ class UserSerializer(serializers.ModelSerializer):
 # 로그인 응답
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
-    access_token = serializers.CharField()
-    refresh_token = serializers.CharField()
+    data = serializers.DictField()  # {"access_token": "...", "refresh_token": "..."}
 
 
 # 내 정보 조회 응답
 class UserInfoSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source="id", read_only=True)
+    user_id = serializers.IntegerField(source="user_id", read_only=True)
     total_like = serializers.IntegerField(default=0)
     total_bookmark = serializers.IntegerField(default=0)
 

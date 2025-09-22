@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User, LoginAttempt, Token, AccessTokenBlacklist
 from .serializers import (
     UserSerializer,
+    UserInfoSerializer,
     TokenSerializer,
     LoginAttemptSerializer,
     AccessTokenBlacklistSerializer,
@@ -27,10 +28,14 @@ class SignupView(generics.CreateAPIView):
         name = serializer.validated_data.get("name")
 
         try:
-            # 중복 검사
-            if User.objects.filter(email=email).exists() or User.objects.filter(name=name).exists():
+            if User.objects.filter(email=email).exists():
                 raise serializers.ValidationError(
-                    {"error": "이메일 또는 닉네임이 중복되었습니다."},
+                    {"error": "이메일이 중복되었습니다."},
+                    code=status.HTTP_409_CONFLICT,
+                )
+            if User.objects.filter(name=name).exists():
+                raise serializers.ValidationError(
+                    {"error": "닉네임이 중복되었습니다."},
                     code=status.HTTP_409_CONFLICT,
                 )
 
@@ -64,7 +69,6 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # 로그인 시도 제한
         attempts = LoginAttempt.objects.filter(
             ip_address=request.META.get("REMOTE_ADDR"),
             login_attempt_time__gte=timezone.now() - timedelta(minutes=5),
@@ -83,9 +87,9 @@ class LoginView(APIView):
                 "is_success": False,
                 "ip_address": request.META.get("REMOTE_ADDR"),
             }
-            login_attempt_serializer = LoginAttemptSerializer(data=login_attempt_data)
-            login_attempt_serializer.is_valid(raise_exception=True)
-            login_attempt_serializer.save()
+            serializer = LoginAttemptSerializer(data=login_attempt_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
 
             return Response(
                 {"error": "이메일이 존재하지 않거나 비밀번호가 틀렸습니다."},
@@ -98,8 +102,8 @@ class LoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        # 토큰 발급
         refresh = RefreshToken.for_user(user)
+
         token_data = {
             "user": user.id,
             "refresh_token": str(refresh),
@@ -115,9 +119,9 @@ class LoginView(APIView):
             "is_success": True,
             "ip_address": request.META.get("REMOTE_ADDR"),
         }
-        login_attempt_serializer = LoginAttemptSerializer(data=login_attempt_data)
-        login_attempt_serializer.is_valid(raise_exception=True)
-        login_attempt_serializer.save()
+        login_serializer = LoginAttemptSerializer(data=login_attempt_data)
+        login_serializer.is_valid(raise_exception=True)
+        login_serializer.save()
 
         return Response(
             {
@@ -128,65 +132,6 @@ class LoginView(APIView):
         )
 
 
-# 소셜 로그인
-class SocialLoginView(APIView):
-    def post(self, request):
-        provider = request.data.get("provider")
-        access_token = request.data.get("access_token")
-
-        try:
-            if provider == "kakao":
-                url = "https://kapi.kakao.com/v2/user/me"
-                headers = {"Authorization": f"Bearer {access_token}"}
-                response = requests.get(url, headers=headers)
-                if response.status_code != 200:
-                    return Response({"error": "소셜 토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-                data = response.json()
-                email = data.get("kakao_account", {}).get("email", f"kakao_{data['id']}@example.com")
-                name = data.get("properties", {}).get("nickname", f"user_{data['id']}")
-
-            elif provider == "google":
-                url = "https://www.googleapis.com/oauth2/v3/userinfo"
-                headers = {"Authorization": f"Bearer {access_token}"}
-                response = requests.get(url, headers=headers)
-                if response.status_code != 200:
-                    return Response({"error": "소셜 토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-                data = response.json()
-                email = data.get("email")
-                name = data.get("name", email.split("@")[0])
-
-            elif provider == "naver":
-                url = "https://openapi.naver.com/v1/nid/me"
-                headers = {"Authorization": f"Bearer {access_token}"}
-                response = requests.get(url, headers=headers)
-                if response.status_code != 200:
-                    return Response({"error": "소셜 토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-                data = response.json().get("response", {})
-                email = data.get("email")
-                name = data.get("nickname", email.split("@")[0] if email else "naver_user")
-
-            else:
-                return Response({"error": "지원하지 않는 provider"}, status=status.HTTP_400_BAD_REQUEST)
-
-            user, _ = User.objects.get_or_create(
-                email=email,
-                defaults={"name": name, "password": make_password(User.objects.make_random_password())},
-            )
-
-            refresh = RefreshToken.for_user(user)
-            return Response(
-                {
-                    "message": "소셜 로그인이 완료되었습니다.",
-                    "data": {"access_token": str(refresh.access_token)},
-                },
-                status=status.HTTP_200_OK,
-            )
-        except Exception:
-            return Response(
-                {"error": "예기치 못한 서버 오류가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-
 # 로그아웃
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -195,9 +140,9 @@ class LogoutView(APIView):
         token = request.auth
         if token:
             blacklist_data = {"user": request.user.id, "access_token": str(token)}
-            blacklist_serializer = AccessTokenBlacklistSerializer(data=blacklist_data)
-            blacklist_serializer.is_valid(raise_exception=True)
-            blacklist_serializer.save()
+            serializer = AccessTokenBlacklistSerializer(data=blacklist_data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
             return Response({"message": "로그아웃이 완료되었습니다."}, status=status.HTTP_200_OK)
         return Response({"error": "토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -207,41 +152,50 @@ class UserInfoView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        data = {
-            "user_id": request.user.id,
-            "email": request.user.email,
-            "name": request.user.name,
-            "profile_image": request.user.profile_image,
-            "allow_notification": request.user.allow_notification,
-            "total_like": 0,
-            "total_bookmark": 0,  # 수정 반영됨
-        }
-        return Response({"data": data}, status=status.HTTP_200_OK)
+        serializer = UserInfoSerializer(request.user)
+        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
 
-# 내 정보 수정
-class UserEditView(APIView):
+# 이름 변경
+class UserNameEditView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def put(self, request):
+    def patch(self, request):
         name = request.data.get("name")
-        password = request.data.get("password")
+        if not name:
+            return Response({"error": "잘못된 형식의 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        try:
-            if name and User.objects.exclude(id=request.user.id).filter(name=name).exists():
-                return Response({"error": "중복된 닉네임입니다."}, status=status.HTTP_409_CONFLICT)
+        if User.objects.exclude(id=request.user.id).filter(name=name).exists():
+            return Response({"error": "중복된 닉네임입니다."}, status=status.HTTP_409_CONFLICT)
 
-            if name:
-                request.user.name = name
-            if password:
-                request.user.password = make_password(password)
+        request.user.name = name
+        request.user.save()
+        return Response({"message": "이름이 수정되었습니다."}, status=status.HTTP_200_OK)
 
-            request.user.save()
-            return Response({"message": "정보가 수정되었습니다."}, status=status.HTTP_200_OK)
-        except Exception:
+
+# 비밀번호 변경
+class UserPasswordEditView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+        confirm_password = request.data.get("new_password_confirm")
+
+        if not current_password or not new_password or not confirm_password:
+            return Response({"error": "잘못된 형식의 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not request.user.check_password(current_password):
+            return Response({"error": "현재 비밀번호가 일치하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        if new_password != confirm_password:
             return Response(
-                {"error": "예기치 못한 서버 오류가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {"error": "비밀번호 확인이 일치하지 않습니다."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY
             )
+
+        request.user.password = make_password(new_password)
+        request.user.save()
+        return Response({"message": "비밀번호가 수정되었습니다."}, status=status.HTTP_200_OK)
 
 
 # 회원 탈퇴
