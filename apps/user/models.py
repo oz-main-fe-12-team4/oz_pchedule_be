@@ -14,7 +14,6 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser):
-    user_id = models.BigAutoField(primary_key=True)  # PK, AUTO_INCREMENT
     email = models.EmailField(max_length=255, unique=True, null=False, blank=False)
     password = models.CharField(max_length=255, null=False, blank=False)
     name = models.CharField(max_length=20, unique=True, null=False, blank=False)
