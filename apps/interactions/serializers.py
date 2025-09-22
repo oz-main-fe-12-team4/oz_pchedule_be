@@ -3,13 +3,13 @@ from .models import Report
 
 
 class ReportSerializer(serializers.ModelSerializer):
-    report_id = serializers.IntegerField(read_only=True)
+    id = serializers.IntegerField(read_only=True)
     reason = serializers.ChoiceField(choices=Report.REASONS)
     created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Report
-        fields = ["report_id", "reason", "created_at"]
+        fields = ["id", "reason", "created_at"]
 
     def create(self, validated_data):
         user = self.context["request"].user
