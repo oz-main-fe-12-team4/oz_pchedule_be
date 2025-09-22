@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
+from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -15,9 +16,11 @@ from .serializers import (
     TokenSerializer,
     LoginAttemptSerializer,
     AccessTokenBlacklistSerializer,
+    UserAdminSerializer,
 )
 
 
+# ---------------- 회원 관련 ---------------- #
 # 회원가입
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -284,3 +287,50 @@ class TokenRefreshView(APIView):
             return Response({"data": {"access_token": str(new_access)}}, status=status.HTTP_200_OK)
         except Exception:
             return Response({"error": "토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# ---------------- 관리자 전용 ---------------- #
+
+
+class UserListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        if not request.user.is_admin:
+            return Response({"error": "관리자 권한이 필요합니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        users = User.objects.all()
+        serializer = UserAdminSerializer(users, many=True)
+        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+
+
+class UserActivateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        if not request.user.is_admin:
+            return Response({"error": "관리자 권한이 필요합니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            user = User.objects.get(id=user_id)
+            user.is_active = True
+            user.save()
+            return Response({"message": "계정이 활성화되었습니다."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "해당 유저가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class UserDeactivateView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, user_id):
+        if not request.user.is_admin:
+            return Response({"error": "관리자 권한이 필요합니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        try:
+            user = User.objects.get(id=user_id)
+            user.is_active = False
+            user.save()
+            return Response({"message": "계정이 비활성화되었습니다."}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({"error": "해당 유저가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
