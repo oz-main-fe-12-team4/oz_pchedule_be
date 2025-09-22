@@ -6,20 +6,10 @@ from django.core.exceptions import ValidationError
 class Category(models.Model):
     """사용자가 선택할 수 있는 일정 카테고리"""
 
-    CATEGORY_CHOICES = [
-        ("일상", "🏠 일상"),
-        ("취미/여가", "🎨 취미/여가"),
-        ("여행", "✈️ 여행"),
-        ("자기계발/학습", "📚 자기계발/학습"),
-        ("특별이벤트", "🎉 특별이벤트"),
-        ("기타", "🌀 기타"),
-    ]
-
-    category_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=20, choices=CATEGORY_CHOICES, unique=True)
+    name = models.CharField(max_length=20, unique=True)
 
     def __str__(self):
-        return self.get_name_display()
+        return self.name
 
 
 class Schedule(models.Model):
@@ -38,7 +28,6 @@ class Schedule(models.Model):
         ("나만보기", "나만보기"),
     ]
 
-    schedule_id = models.AutoField(primary_key=True)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="schedules")
     title = models.CharField(max_length=50)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name="schedules")
@@ -83,7 +72,6 @@ class Schedule(models.Model):
 class DetailSchedule(models.Model):
     """일정 안의 상세 일정"""
 
-    detail_id = models.AutoField(primary_key=True)
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="details")
     title = models.CharField(max_length=50)
     description = models.CharField(max_length=300, blank=True, null=True)
@@ -146,17 +134,14 @@ class Recurrence(models.Model):
         ("Yearly", "매년"),
     ]
 
-    recurrence_id = models.AutoField(primary_key=True)
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="recurrences")
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-    interval = models.PositiveIntegerField(default=1)
 
     # ManyToMany: 여러 요일 선택 가능
     weekdays = models.ManyToManyField(Weekday, blank=True, related_name="recurrences")
 
     day_of_month = models.PositiveSmallIntegerField(blank=True, null=True)
     month_of_year = models.PositiveSmallIntegerField(blank=True, null=True)
-    time = models.TimeField(blank=True, null=True)
 
     count = models.PositiveIntegerField(blank=True, null=True)
     until = models.DateField(blank=True, null=True)
@@ -170,4 +155,4 @@ class Recurrence(models.Model):
             raise ValidationError("Monthly recurrence should specify day_of_month or weekdays.")
 
     def __str__(self):
-        return f"{self.schedule.title} - {self.type} every {self.interval}"
+        return f"{self.schedule.title} - {self.type}"
