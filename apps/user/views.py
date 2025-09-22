@@ -132,6 +132,65 @@ class LoginView(APIView):
         )
 
 
+# 소셜 로그인
+class SocialLoginView(APIView):
+    def post(self, request):
+        provider = request.data.get("provider")
+        access_token = request.data.get("access_token")
+
+        try:
+            if provider == "kakao":
+                url = "https://kapi.kakao.com/v2/user/me"
+                headers = {"Authorization": f"Bearer {access_token}"}
+                response = requests.get(url, headers=headers)
+                if response.status_code != 200:
+                    return Response({"error": "소셜 토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+                data = response.json()
+                email = data.get("kakao_account", {}).get("email", f"kakao_{data['id']}@example.com")
+                name = data.get("properties", {}).get("nickname", f"user_{data['id']}")
+
+            elif provider == "google":
+                url = "https://www.googleapis.com/oauth2/v3/userinfo"
+                headers = {"Authorization": f"Bearer {access_token}"}
+                response = requests.get(url, headers=headers)
+                if response.status_code != 200:
+                    return Response({"error": "소셜 토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+                data = response.json()
+                email = data.get("email")
+                name = data.get("name", email.split("@")[0])
+
+            elif provider == "naver":
+                url = "https://openapi.naver.com/v1/nid/me"
+                headers = {"Authorization": f"Bearer {access_token}"}
+                response = requests.get(url, headers=headers)
+                if response.status_code != 200:
+                    return Response({"error": "소셜 토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+                data = response.json().get("response", {})
+                email = data.get("email")
+                name = data.get("nickname", email.split("@")[0] if email else "naver_user")
+
+            else:
+                return Response({"error": "지원하지 않는 provider"}, status=status.HTTP_400_BAD_REQUEST)
+
+            user, _ = User.objects.get_or_create(
+                email=email,
+                defaults={"name": name, "password": make_password(User.objects.make_random_password())},
+            )
+
+            refresh = RefreshToken.for_user(user)
+            return Response(
+                {
+                    "message": "소셜 로그인이 완료되었습니다.",
+                    "data": {"access_token": str(refresh.access_token)},
+                },
+                status=status.HTTP_200_OK,
+            )
+        except Exception:
+            return Response(
+                {"error": "예기치 못한 서버 오류가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+
 # 로그아웃
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
