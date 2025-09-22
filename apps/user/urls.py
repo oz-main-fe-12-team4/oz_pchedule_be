@@ -5,22 +5,20 @@ from .views import (
     SocialLoginView,
     LogoutView,
     UserInfoView,
-    UserEditView,
+    UserNameEditView,  # 닉네임 수정
+    UserPasswordEditView,  # 비밀번호 수정
     UserDeleteView,
     TokenRefreshView,
-    NicknameUpdateView,
-    PasswordChangeView,
 )
 
 urlpatterns = [
     path("signup", SignupView.as_view(), name="signup"),
     path("login", LoginView.as_view(), name="login"),
-    path("social-login", SocialLoginView.as_view(), name="social-login"),  # ✅ 소셜 로그인
+    path("social-login", SocialLoginView.as_view(), name="social-login"),
     path("logout", LogoutView.as_view(), name="logout"),
     path("me", UserInfoView.as_view(), name="user-info"),
-    path("me/edit", UserEditView.as_view(), name="user-edit"),
+    path("me/nickname", UserNameEditView.as_view(), name="user-nickname-edit"),
+    path("me/password", UserPasswordEditView.as_view(), name="user-password-edit"),
     path("me/withdraw", UserDeleteView.as_view(), name="user-delete"),
     path("token/refresh", TokenRefreshView.as_view(), name="token-refresh"),
-    path("me/nickname", NicknameUpdateView.as_view(), name="user-nickname-update"),
-    path("me/password", PasswordChangeView.as_view(), name="user-password-change"),
 ]
