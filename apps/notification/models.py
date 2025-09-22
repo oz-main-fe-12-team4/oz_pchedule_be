@@ -3,16 +3,16 @@ from apps.user.models import User
 
 
 class Notification(models.Model):
-    notification_id = models.AutoField(primary_key=True, auto_created=True)
+    NOTIFICATION_TYPES = [("like", "Like"), ("bookmark", "Bookmark"), ("report", "Report"), ("schedule", "Schedule")]
+
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    type = models.CharField(max_length=20, null=False)
-    content = models.CharField(max_length=50, null=False)
-    is_read = models.BooleanField(default=False, null=False)
-    is_deleted = models.BooleanField(default=False, null=False)
-    created_at = models.DateTimeField(auto_now_add=True, null=False)
+    type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
+    content = models.CharField(max_length=50)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = "notification"
 
     def __str__(self):
-        return f"Notification ID = {self.notification_id}, User ID = {self.user_id}"
+        return f"Notification ID = {self.id}, User ID = {self.user.id}"
