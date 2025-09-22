@@ -4,27 +4,27 @@ from apps.schedule.models import Schedule
 
 
 class Like(models.Model):
-    like_id = models.CompositePrimaryKey("user", "schedule")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE)
 
     class Meta:
         db_table = "like"
+        constraints = [models.UniqueConstraint(fields=["user", "schedule"], name="unique_user_schedule")]
 
     def __str__(self):
-        return f"like ID = {self.like_id}"
+        return f"Like(id={self.id}, user={self.user_id}, schedule={self.schedule_id})"
 
 
 class Bookmark(models.Model):
-    bookmark_id = models.CompositePrimaryKey("user", "schedule")
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE)
 
     class Meta:
         db_table = "bookmark"
+        constraints = [models.UniqueConstraint(fields=["user", "schedule"], name="unique_user_schedule_bookmark")]
 
     def __str__(self):
-        return f"bookmark ID = {self.bookmark_id}"
+        return f"Bookmark(id={self.id}, user={self.user_id}, schedule={self.schedule_id})"
 
 
 class Report(models.Model):
@@ -36,7 +36,6 @@ class Report(models.Model):
         ("SEXUAL", "선정적인 내용"),
     ]
 
-    report_id = models.IntegerField(primary_key=True, auto_created=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE)
     reason = models.CharField(max_length=50, null=False, choices=REASONS)
