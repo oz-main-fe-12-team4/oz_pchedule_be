@@ -29,5 +29,5 @@ urlpatterns = [
     path("user/", include("apps.user.urls")),
     path("schedule/", include("apps.schedule.urls")),
     path("schedule/<int:pk>/", include("apps.interactions.urls")),
-    path("notification/", include("apps.notification.urls")),
+    path("notifications/", include("apps.notification.urls")),
 ]
