@@ -45,7 +45,6 @@ PROJECT_APPS = [
     "apps.schedule",
     "apps.interactions",
     "apps.notification",
-    "apps.post",
 ]
 
 THIRD_PARTY_APPS = [
