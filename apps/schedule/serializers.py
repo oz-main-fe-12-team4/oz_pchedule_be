@@ -5,7 +5,7 @@ from .models import Category, Schedule, DetailSchedule, Recurrence, Weekday
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ["category_id", "name"]
+        fields = ["id", "name"]
 
 
 class WeekdaySerializer(serializers.ModelSerializer):
@@ -23,14 +23,12 @@ class RecurrenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recurrence
         fields = [
-            "recurrence_id",
+            "id",
             "type",
-            "interval",
             "weekdays",
             "weekday_ids",
             "day_of_month",
             "month_of_year",
-            "time",
             "count",
             "until",
         ]
@@ -40,7 +38,7 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetailSchedule
         fields = [
-            "detail_id",
+            "id",
             "schedule",
             "title",
             "description",
@@ -65,7 +63,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Schedule
         fields = [
-            "schedule_id",
+            "id",
             "user",
             "title",
             "category",
