@@ -150,10 +150,6 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
-    "DEFAULT_SCHEMA_CLASS": [
-        "drf_spectacular.openapi.AutoSchema",
-    ],
-    "EXCEPTION_HANDLER": [
-        "apps.utils.exceptions.custom_exception_handler",
-    ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "EXCEPTION_HANDLER": "my_project.utils.exceptions.custom_exception_handler",
 }
