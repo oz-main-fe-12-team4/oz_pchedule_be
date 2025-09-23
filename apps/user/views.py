@@ -65,12 +65,26 @@ class SignupView(generics.CreateAPIView):
 
 
 # 로그인
-
-
 class LoginView(APIView):
     @swagger_auto_schema(
-        request_body=LoginRequestSerializer,  # 요청 바디 명세
-        responses={200: LoginResponseSerializer},  # 응답 예시
+        request_body=LoginRequestSerializer,  # 요청 바디
+        responses={
+            200: openapi.Response(
+                description="로그인 성공",
+                schema=LoginResponseSerializer,
+                examples={
+                    "application/json": {
+                        "message": "로그인이 완료되었습니다.",
+                        "access_token": "eyJhbGciOiJIUzI1NiIs...",
+                        "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+                    }
+                },
+            ),
+            400: "잘못된 요청 (이메일/비밀번호 누락)",
+            401: "이메일 또는 비밀번호가 올바르지 않음",
+            403: "정지된 계정",
+            429: "로그인 시도 제한 초과",
+        },
         operation_description="사용자 로그인 (이메일 + 비밀번호)",
     )
     def post(self, request):
@@ -83,9 +97,10 @@ class LoginView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # 로그인 시도 제한
         attempts = LoginAttempt.objects.filter(
             ip_address=request.META.get("REMOTE_ADDR"),
-            login_attempt_time__gte=timezone.now() - timedelta(minutes=5),
+            login_attempt_time__gte=timezone.now() - timezone.timedelta(minutes=5),
             is_success=False,
         ).count()
         if attempts >= 5:
@@ -116,7 +131,9 @@ class LoginView(APIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # JWT 발급
         refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
 
         token_data = {
             "user": user.id,
@@ -128,6 +145,7 @@ class LoginView(APIView):
         token_serializer.is_valid(raise_exception=True)
         token_serializer.save()
 
+        # 성공한 로그인 기록
         login_attempt_data = {
             "user": user.id,
             "is_success": True,
@@ -140,8 +158,8 @@ class LoginView(APIView):
         return Response(
             {
                 "message": "로그인이 완료되었습니다.",
-                "access_token": str(refresh.access_token),
-                "refresh_token": str(refresh),  # 👈 추가
+                "access_token": access_token,
+                "refresh_token": str(refresh),
             },
             status=status.HTTP_200_OK,
         )
