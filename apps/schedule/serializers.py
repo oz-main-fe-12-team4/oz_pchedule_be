@@ -2,18 +2,23 @@ from rest_framework import serializers
 from .models import Category, Schedule, DetailSchedule, Recurrence, Weekday
 
 
+# --- Category ---
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ["id", "name"]
+        read_only_fields = ["id"]  # 생성 시 id는 서버에서 자동 할당
 
 
+# --- Weekday ---
 class WeekdaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Weekday
-        fields = ["id"]
+        fields = ["id"]  # read-only만 허용
+        read_only_fields = ["id"]
 
 
+# --- Recurrence ---
 class RecurrenceSerializer(serializers.ModelSerializer):
     weekdays = WeekdaySerializer(many=True, read_only=True)
     weekday_ids = serializers.PrimaryKeyRelatedField(
@@ -31,9 +36,12 @@ class RecurrenceSerializer(serializers.ModelSerializer):
             "month_of_year",
             "count",
             "until",
+            "created_at",
         ]
+        read_only_fields = ["id", "weekdays", "created_at"]
 
 
+# --- DetailSchedule ---
 class DetailScheduleSerializer(serializers.ModelSerializer):
     class Meta:
         model = DetailSchedule
@@ -50,8 +58,16 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
+        read_only_fields = [
+            "id",
+            "is_completed",  # 서버 complete 액션에서만 변경
+            "completed_at",  # 서버에서 자동 기록
+            "created_at",
+            "updated_at",
+        ]
 
 
+# --- Schedule ---
 class ScheduleSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     category_id = serializers.PrimaryKeyRelatedField(
@@ -80,4 +96,12 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "recurrences",
             "details",
         ]
-        read_only_fields = ["like_count", "bookmark_count", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "like_count",  # 좋아요, 북마크 서버 처리
+            "bookmark_count",
+            "created_at",
+            "updated_at",
+            "recurrences",
+            "details",
+        ]
