@@ -1,22 +1,27 @@
 from django.contrib.auth.backends import ModelBackend
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
+from .models import User
 
 
 class CustomBackend(ModelBackend):
     def authenticate(self, request, username=None, email=None, password=None, **kwargs):
-        print("🔥 CustomBackend called!", email, password)
-        # 디버깅
+        print(f"🔥 CustomBackend called! username={username}, email={email}, password={password}")
+
+        # username 파라미터를 email로 사용 (Django 기본 방식)
         if email is None:
-            email = kwargs.get("username")  # fallback
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
+            email = username
+
+        if not email:
             return None
 
-        if user.check_password(password) and self.user_can_authenticate(user):
-            return user
-        print("check_password:", user.check_password(password))
-        print("is_active:", user.is_active)
+        print(f"🔍 Looking for user with email: {email}")
+        try:
+            user = User.objects.get(email=email)
+            print(f"✅ User found: {user.email}")
+            password_check = user.check_password(password)
+            print(f"🔐 Password check: {password_check}")
+
+            if password_check and self.user_can_authenticate(user):
+                return user
+        except User.DoesNotExist:
+            print("❌ User not found")
         return None
