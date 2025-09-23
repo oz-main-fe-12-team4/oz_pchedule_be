@@ -23,10 +23,10 @@ class UserSerializer(serializers.ModelSerializer):
         ]
 
 
-# 로그인
+# 로그인 요청
 class LoginRequestSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    password = serializers.CharField()
+    email = serializers.EmailField(required=True)
+    password = serializers.CharField(required=True, write_only=True)
 
 
 # 로그인 응답
