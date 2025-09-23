@@ -1,0 +1,20 @@
+# base 이미지를 상속
+FROM python:3.13-slim AS base
+
+# 작업 디렉토리 설정
+WORKDIR /app
+
+# pyproject.toml 먼저 복사해서 pip이 프로젝트를 인식하게 함
+COPY pyproject.toml pyproject.toml
+
+# 전체 코드 복사
+COPY . .
+
+# 개발용 의존성 설치 (dev 포함)
+RUN pip install .[dev]
+
+# 포트 노출
+EXPOSE 8000
+
+# 개발용 서버 실행 (uv 제거, 일반 python runserver 사용)
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
