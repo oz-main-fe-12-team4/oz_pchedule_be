@@ -68,19 +68,16 @@ class SignupView(generics.CreateAPIView):
 # 로그인
 class LoginView(APIView):
     @swagger_auto_schema(
-        request_body=LoginRequestSerializer,
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "email": openapi.Schema(type=openapi.TYPE_STRING, description="사용자 이메일"),
+                "password": openapi.Schema(type=openapi.TYPE_STRING, description="비밀번호"),
+            },
+            required=["email", "password"],
+        ),
         responses={
-            200: openapi.Response(
-                description="로그인 성공",
-                schema=LoginResponseSerializer,
-                examples={
-                    "application/json": {
-                        "message": "로그인이 완료되었습니다.",
-                        "access_token": "eyJhbGciOiJIUzI1NiIs...",
-                        "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
-                    }
-                },
-            ),
+            200: LoginResponseSerializer,
             400: ErrorResponseSerializer,
             401: ErrorResponseSerializer,
             403: ErrorResponseSerializer,
