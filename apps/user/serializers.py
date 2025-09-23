@@ -4,7 +4,7 @@ from .models import User, LoginAttempt, Token, AccessTokenBlacklist
 
 # 회원가입 / 유저 생성
 class UserSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source="id", read_only=True)  # user_id 반환
+    user_id = serializers.IntegerField(source="id", read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
     password = serializers.CharField(write_only=True)
@@ -34,6 +34,11 @@ class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
+
+
+#  에러 응답
+class ErrorResponseSerializer(serializers.Serializer):
+    error = serializers.CharField()
 
 
 # 내 정보 조회 응답

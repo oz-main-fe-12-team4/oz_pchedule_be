@@ -23,7 +23,7 @@ class User(AbstractBaseUser):
     updated_at = models.DateTimeField(auto_now=True, null=False)
     last_login = models.DateTimeField(blank=True, null=True)
     is_admin = models.BooleanField(default=False, null=False)
-    is_active = models.BooleanField(default=False, null=False)  # 계정 활성화 여부
+    is_active = models.BooleanField(default=True, null=False)  # 계정 활성화 여부
     is_reported = models.BooleanField(default=False, null=False)  # 신고 여부
 
     USERNAME_FIELD = "email"

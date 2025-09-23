@@ -21,6 +21,7 @@ from .serializers import (
     UserAdminSerializer,
     LoginRequestSerializer,
     LoginResponseSerializer,
+    ErrorResponseSerializer,
 )
 
 
@@ -64,28 +65,32 @@ class SignupView(generics.CreateAPIView):
             )
 
 
-# 로그인
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginRequestSerializer  # ✅ 요청 Body용 Serializer 지정
 
-
-class LoginView(APIView):
     @swagger_auto_schema(
-        request_body=LoginRequestSerializer,  # 요청 바디 명세
-        responses={200: LoginResponseSerializer},  # 응답 예시
+        request_body=LoginRequestSerializer,  # 요청 바디 스키마
+        responses={
+            200: LoginResponseSerializer,  # 응답 스키마
+            400: "잘못된 요청 (이메일/비밀번호 누락)",
+            401: "이메일 또는 비밀번호가 올바르지 않음",
+            403: "정지된 계정",
+            429: "로그인 시도 제한 초과",
+        },
         operation_description="사용자 로그인 (이메일 + 비밀번호)",
     )
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
+        # ✅ 요청 데이터 검증
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not email or not password:
-            return Response(
-                {"error": "이메일 또는 비밀번호를 확인해주세요"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
 
+        # 로그인 시도 제한 (5분 내 5회 실패 시 차단)
         attempts = LoginAttempt.objects.filter(
             ip_address=request.META.get("REMOTE_ADDR"),
-            login_attempt_time__gte=timezone.now() - timedelta(minutes=5),
+            login_attempt_time__gte=timezone.now() - timezone.timedelta(minutes=5),
             is_success=False,
         ).count()
         if attempts >= 5:
@@ -94,30 +99,34 @@ class LoginView(APIView):
                 status=status.HTTP_429_TOO_MANY_REQUESTS,
             )
 
-        user = authenticate(request, email=email, password=password)
+        # 사용자 인증
+        user = authenticate(request, username=email, password=password)
         if user is None:
             login_attempt_data = {
                 "user": None,
                 "is_success": False,
                 "ip_address": request.META.get("REMOTE_ADDR"),
             }
-            serializer = LoginAttemptSerializer(data=login_attempt_data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            attempt_serializer = LoginAttemptSerializer(data=login_attempt_data)
+            attempt_serializer.is_valid(raise_exception=True)
+            attempt_serializer.save()
 
             return Response(
                 {"error": "이메일이 존재하지 않거나 비밀번호가 틀렸습니다."},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-        if user.is_locked:
+        if getattr(user, "is_locked", False):
             return Response(
                 {"error": "정지된 계정입니다."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        # ✅ JWT 발급
         refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
 
+        # 토큰 저장
         token_data = {
             "user": user.id,
             "refresh_token": str(refresh),
@@ -128,23 +137,23 @@ class LoginView(APIView):
         token_serializer.is_valid(raise_exception=True)
         token_serializer.save()
 
+        # 성공한 로그인 기록
         login_attempt_data = {
             "user": user.id,
             "is_success": True,
             "ip_address": request.META.get("REMOTE_ADDR"),
         }
-        login_serializer = LoginAttemptSerializer(data=login_attempt_data)
-        login_serializer.is_valid(raise_exception=True)
-        login_serializer.save()
+        success_serializer = LoginAttemptSerializer(data=login_attempt_data)
+        success_serializer.is_valid(raise_exception=True)
+        success_serializer.save()
 
-        return Response(
-            {
-                "message": "로그인이 완료되었습니다.",
-                "access_token": str(refresh.access_token),
-                "refresh_token": str(refresh),  # 👈 추가
-            },
-            status=status.HTTP_200_OK,
-        )
+        # ✅ LoginResponseSerializer 스키마와 맞는 응답 반환
+        response_data = {
+            "message": "로그인이 완료되었습니다.",
+            "access_token": access_token,
+            "refresh_token": str(refresh),
+        }
+        return Response(response_data, status=status.HTTP_200_OK)
 
 
 # 소셜 로그인
