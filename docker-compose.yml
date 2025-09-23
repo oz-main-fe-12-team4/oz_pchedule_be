@@ -1,12 +1,13 @@
 services:
-  web:
-    build: .
-    container_name: django_app
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
+  dev:
+    build:
+      context: .
+      dockerfile: dockerfile.dev
+    container_name: django_dev
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
     environment:
       - DEBUG=1
       - DB_NAME=postgres
@@ -16,6 +17,27 @@ services:
       - DB_PORT=5432
     depends_on:
       - db
+
+  prod:
+    build:
+      context: .
+      dockerfile: dockerfile.prod
+    container_name: django_prod
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=0
+      - DB_NAME=postgres
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_HOST=db
+      - DB_PORT=5432
+    depends_on:
+      - db
+    deploy:
+      resources:
+        limits:
+          memory: 512m
 
   db:
     image: postgres:15

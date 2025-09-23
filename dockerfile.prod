@@ -1,0 +1,14 @@
+# 빌드 스테이지
+FROM python:3.13-slim AS builder
+WORKDIR /app
+COPY . /app
+RUN pip install --prefix=/install .
+
+# 런타임 스테이지
+FROM python:3.13-slim
+WORKDIR /app
+COPY --from=builder /install /usr/local
+COPY --from=builder /app /app
+
+CMD ["gunicorn", "myproject.wsgi:application", "-w", "1", "--threads", "2", "-b", "0.0.0.0:8000"]
+EXPOSE 8000
