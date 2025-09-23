@@ -65,23 +65,34 @@ class SignupView(generics.CreateAPIView):
             )
 
 
-# 로그인
 class LoginView(APIView):
     @swagger_auto_schema(
         request_body=openapi.Schema(
             type=openapi.TYPE_OBJECT,
             properties={
-                "email": openapi.Schema(type=openapi.TYPE_STRING, description="사용자 이메일"),
-                "password": openapi.Schema(type=openapi.TYPE_STRING, description="비밀번호"),
+                "email": openapi.Schema(
+                    type=openapi.TYPE_STRING, description="사용자 이메일", example="test@example.com"
+                ),
+                "password": openapi.Schema(type=openapi.TYPE_STRING, description="비밀번호", example="123456"),
             },
             required=["email", "password"],
         ),
         responses={
-            200: LoginResponseSerializer,
-            400: ErrorResponseSerializer,
-            401: ErrorResponseSerializer,
-            403: ErrorResponseSerializer,
-            429: ErrorResponseSerializer,
+            200: openapi.Response(
+                description="로그인 성공",
+                schema=LoginResponseSerializer,
+                examples={
+                    "application/json": {
+                        "message": "로그인이 완료되었습니다.",
+                        "access_token": "eyJhbGciOiJIUzI1NiIs...",
+                        "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+                    }
+                },
+            ),
+            400: "잘못된 요청 (이메일/비밀번호 누락)",
+            401: "이메일 또는 비밀번호가 올바르지 않음",
+            403: "정지된 계정",
+            429: "로그인 시도 제한 초과",
         },
         operation_description="사용자 로그인 (이메일 + 비밀번호)",
     )
