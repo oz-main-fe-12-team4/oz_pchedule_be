@@ -26,20 +26,6 @@ class ScheduleViewSet(viewsets.ModelViewSet):
     queryset = Schedule.objects.all().select_related("category", "user")
     serializer_class = ScheduleSerializer
 
-    @action(detail=True, methods=["post"])
-    def like(self, request, pk=None):
-        schedule = self.get_object()
-        schedule.like_count += 1
-        schedule.save()
-        return Response({"like_count": schedule.like_count})
-
-    @action(detail=True, methods=["post"])
-    def bookmark(self, request, pk=None):
-        schedule = self.get_object()
-        schedule.bookmark_count += 1
-        schedule.save()
-        return Response({"bookmark_count": schedule.bookmark_count})
-
 
 class DetailScheduleViewSet(viewsets.ModelViewSet):
     queryset = DetailSchedule.objects.all().select_related("schedule")
