@@ -9,6 +9,8 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from .models import User, LoginAttempt, Token, AccessTokenBlacklist
 from .serializers import (
     UserSerializer,
@@ -17,6 +19,8 @@ from .serializers import (
     LoginAttemptSerializer,
     AccessTokenBlacklistSerializer,
     UserAdminSerializer,
+    LoginRequestSerializer,
+    LoginResponseSerializer,
 )
 
 
@@ -61,7 +65,14 @@ class SignupView(generics.CreateAPIView):
 
 
 # 로그인
+
+
 class LoginView(APIView):
+    @swagger_auto_schema(
+        request_body=LoginRequestSerializer,  # 요청 바디 명세
+        responses={200: LoginResponseSerializer},  # 응답 예시
+        operation_description="사용자 로그인 (이메일 + 비밀번호)",
+    )
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
