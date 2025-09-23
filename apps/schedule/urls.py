@@ -1,4 +1,3 @@
-# apps/schedule/urls.py
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
@@ -9,15 +8,13 @@ from .views import (
     RecurrenceViewSet,
 )
 
-# DRF DefaultRouter 생성
 router = DefaultRouter()
-router.register("categories", CategoryViewSet)
-router.register("weekdays", WeekdayViewSet)
-router.register("schedules", ScheduleViewSet)
-router.register("details", DetailScheduleViewSet)
-router.register("recurrences", RecurrenceViewSet)
+router.register(r"schedule/categories", CategoryViewSet, basename="category")
+router.register(r"schedule/weekdays", WeekdayViewSet, basename="weekday")
+router.register(r"schedule/schedules", ScheduleViewSet, basename="schedule")
+router.register(r"schedule/details", DetailScheduleViewSet, basename="detailschedule")
+router.register(r"schedule/recurrences", RecurrenceViewSet, basename="recurrence")
 
-# URL 패턴 등록
 urlpatterns = [
     path("", include(router.urls)),
 ]
