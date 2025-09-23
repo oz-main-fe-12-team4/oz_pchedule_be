@@ -13,7 +13,7 @@ class Category(models.Model):
 
 
 class Schedule(models.Model):
-    """일정 묶음 / 일정 메인"""
+    """일정 메인"""
 
     PRIORITY_CHOICES = [
         ("긴급", "긴급"),
@@ -22,7 +22,6 @@ class Schedule(models.Model):
         ("낮음", "낮음"),
         ("보류", "보류"),
     ]
-
     SHARE_CHOICES = [
         ("전체공개", "전체공개"),
         ("나만보기", "나만보기"),
@@ -34,15 +33,12 @@ class Schedule(models.Model):
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="중간")
     share_type = models.CharField(max_length=20, choices=SHARE_CHOICES, default="나만보기")
     is_recurrence = models.BooleanField(default=False)
-
     start_period = models.DateTimeField()
     end_period = models.DateTimeField()
-
     like_count = models.PositiveIntegerField(default=0)
     bookmark_count = models.PositiveIntegerField(default=0)
-
-    created_at = models.DateTimeField(auto_now_add=True)  # 생성 시 자동 기록
-    updated_at = models.DateTimeField(auto_now=True)  # 수정 시 자동 기록
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         indexes = [models.Index(fields=["user", "created_at"])]
@@ -70,7 +66,7 @@ class Schedule(models.Model):
 
 
 class DetailSchedule(models.Model):
-    """일정 안의 상세 일정"""
+    """상세 일정"""
 
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="details")
     title = models.CharField(max_length=50)
@@ -80,7 +76,6 @@ class DetailSchedule(models.Model):
     alert_minute = models.PositiveIntegerField(default=0)
     is_completed = models.BooleanField(default=False)
     completed_at = models.DateTimeField(null=True, blank=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -106,18 +101,9 @@ class DetailSchedule(models.Model):
 
 
 class Weekday(models.Model):
-    """요일 (반복 규칙 ManyToMany용)"""
+    """요일 (반복 규칙용)"""
 
-    DAYS = [
-        (0, "월"),
-        (1, "화"),
-        (2, "수"),
-        (3, "목"),
-        (4, "금"),
-        (5, "토"),
-        (6, "일"),
-    ]
-
+    DAYS = [(0, "월"), (1, "화"), (2, "수"), (3, "목"), (4, "금"), (5, "토"), (6, "일")]
     id = models.PositiveSmallIntegerField(choices=DAYS, primary_key=True)
 
     def __str__(self):
@@ -125,27 +111,16 @@ class Weekday(models.Model):
 
 
 class Recurrence(models.Model):
-    """반복 일정 규칙"""
+    """반복 일정"""
 
-    TYPE_CHOICES = [
-        ("Daily", "매일"),
-        ("Weekly", "매주"),
-        ("Monthly", "매월"),
-        ("Yearly", "매년"),
-    ]
-
+    TYPE_CHOICES = [("Daily", "매일"), ("Weekly", "매주"), ("Monthly", "매월"), ("Yearly", "매년")]
     schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="recurrences")
     type = models.CharField(max_length=10, choices=TYPE_CHOICES)
-
-    # ManyToMany: 여러 요일 선택 가능
     weekdays = models.ManyToManyField(Weekday, blank=True, related_name="recurrences")
-
     day_of_month = models.PositiveSmallIntegerField(blank=True, null=True)
     month_of_year = models.PositiveSmallIntegerField(blank=True, null=True)
-
     count = models.PositiveIntegerField(blank=True, null=True)
     until = models.DateField(blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def clean(self):

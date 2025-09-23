@@ -22,16 +22,7 @@ class RecurrenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Recurrence
-        fields = [
-            "id",
-            "type",
-            "weekdays",
-            "weekday_ids",
-            "day_of_month",
-            "month_of_year",
-            "count",
-            "until",
-        ]
+        fields = ["id", "type", "weekdays", "weekday_ids", "day_of_month", "month_of_year", "count", "until"]
 
 
 class DetailScheduleSerializer(serializers.ModelSerializer):
