@@ -21,6 +21,7 @@ from .serializers import (
     UserAdminSerializer,
     LoginRequestSerializer,
     LoginResponseSerializer,
+    ErrorResponseSerializer,
 )
 
 
@@ -67,7 +68,7 @@ class SignupView(generics.CreateAPIView):
 # 로그인
 class LoginView(APIView):
     @swagger_auto_schema(
-        request_body=LoginRequestSerializer,  # 요청 바디
+        request_body=LoginRequestSerializer,
         responses={
             200: openapi.Response(
                 description="로그인 성공",
@@ -80,10 +81,10 @@ class LoginView(APIView):
                     }
                 },
             ),
-            400: "잘못된 요청 (이메일/비밀번호 누락)",
-            401: "이메일 또는 비밀번호가 올바르지 않음",
-            403: "정지된 계정",
-            429: "로그인 시도 제한 초과",
+            400: ErrorResponseSerializer,
+            401: ErrorResponseSerializer,
+            403: ErrorResponseSerializer,
+            429: ErrorResponseSerializer,
         },
         operation_description="사용자 로그인 (이메일 + 비밀번호)",
     )
