@@ -140,7 +140,8 @@ class LoginView(APIView):
         return Response(
             {
                 "message": "로그인이 완료되었습니다.",
-                "data": {"access_token": str(refresh.access_token)},
+                "access_token": str(refresh.access_token),
+                "refresh_token": str(refresh),  # 👈 추가
             },
             status=status.HTTP_200_OK,
         )
