@@ -1,9 +1,4 @@
 from rest_framework import viewsets
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
-
 from .models import Category, Schedule, DetailSchedule, Recurrence, Weekday
 from .serializers import (
     CategorySerializer,
@@ -33,28 +28,7 @@ class DetailScheduleViewSet(viewsets.ModelViewSet):
     queryset = DetailSchedule.objects.all().select_related("schedule")
     serializer_class = DetailScheduleSerializer
 
-    @action(detail=True, methods=["post"])
-    def complete(self, request, pk=None):
-        detail = self.get_object()
-        detail.is_completed = True
-        detail.save()
-        return Response({"is_completed": detail.is_completed})
-
 
 class RecurrenceViewSet(viewsets.ModelViewSet):
     queryset = Recurrence.objects.all().select_related("schedule")
     serializer_class = RecurrenceSerializer
-
-
-# --- urls.py ---
-
-router = DefaultRouter()
-router.register("categories", CategoryViewSet)
-router.register("weekdays", WeekdayViewSet)
-router.register("schedules", ScheduleViewSet)
-router.register("details", DetailScheduleViewSet)
-router.register("recurrences", RecurrenceViewSet)
-
-urlpatterns = [
-    path("", include(router.urls)),
-]
