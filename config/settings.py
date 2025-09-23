@@ -154,7 +154,7 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "utils.exceptions.custom_exception_handler",
 }
 
-# AUTHENTICATION_BACKENDS = [
-#     'apps.user.backends.CustomBackend',
-#     'django.contrib.auth.backends.ModelBackend',  # 기본
-# ]
+AUTHENTICATION_BACKENDS = [
+    "apps.user.backends.CustomBackend",
+    "django.contrib.auth.backends.ModelBackend",  # 기본
+]

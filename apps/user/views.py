@@ -100,7 +100,7 @@ class LoginView(generics.GenericAPIView):
             )
 
         # 사용자 인증
-        user = authenticate(request, email=email, password=password)
+        user = authenticate(request, username=email, password=password)
         if user is None:
             login_attempt_data = {
                 "user": None,
