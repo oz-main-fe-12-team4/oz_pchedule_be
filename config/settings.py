@@ -153,3 +153,8 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "utils.exceptions.custom_exception_handler",
 }
+
+# AUTHENTICATION_BACKENDS = [
+#     'apps.user.backends.CustomBackend',
+#     'django.contrib.auth.backends.ModelBackend',  # 기본
+# ]
