@@ -35,6 +35,15 @@ class LoginResponseSerializer(serializers.Serializer):
     access_token = serializers.CharField()
     refresh_token = serializers.CharField()
 
+    class Meta:
+        swagger_schema_fields = {
+            "example": {
+                "message": "로그인이 완료되었습니다.",
+                "access_token": "eyJhbGciOiJIUzI1NiIs...",
+                "refresh_token": "eyJhbGciOiJIUzI1NiIs...",
+            }
+        }
+
 
 # 내 정보 조회 응답
 class UserInfoSerializer(serializers.ModelSerializer):
