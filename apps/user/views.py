@@ -17,6 +17,7 @@ from .serializers import (
     LoginAttemptSerializer,
     AccessTokenBlacklistSerializer,
     UserAdminSerializer,
+    LoginRequestSerializer,
 )
 
 
@@ -63,9 +64,11 @@ class SignupView(generics.CreateAPIView):
 # 로그인
 class LoginView(APIView):
     def post(self, request):
-        email = request.data.get("email")
-        password = request.data.get("password")
+        serializer = LoginRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        email = serializer.validated_data["email"]
+        password = serializer.validated_data["password"]
         if not email or not password:
             return Response(
                 {"error": "이메일 또는 비밀번호를 확인해주세요"},
