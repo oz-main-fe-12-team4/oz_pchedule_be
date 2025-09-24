@@ -53,6 +53,7 @@ THIRD_PARTY_APPS = [
     "drf_yasg",
     "drf_spectacular",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -164,3 +165,5 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
 }
+
+AUTH_USER_MODEL = "user.User"

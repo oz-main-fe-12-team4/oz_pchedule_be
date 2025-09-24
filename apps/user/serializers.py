@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, LoginAttempt, Token, AccessTokenBlacklist
+from .models import User, LoginAttempt, Token, TokenBlacklist
 
 
 # 회원가입 / 유저 생성
@@ -36,9 +36,26 @@ class LoginResponseSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
 
 
+# 로그아웃
+class LogoutSerializer(serializers.Serializer):
+    refresh_token = serializers.CharField()
+
+
 #  에러 응답
 class ErrorResponseSerializer(serializers.Serializer):
     error = serializers.CharField()
+
+
+# 닉네임
+class ChangeNameSerializer(serializers.Serializer):
+    name = serializers.CharField()
+
+
+# 패스워드 변경
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    new_password_confirm = serializers.CharField(required=True)
 
 
 # 내 정보 조회 응답
@@ -84,5 +101,5 @@ class LoginAttemptSerializer(serializers.ModelSerializer):
 # 블랙리스트 처리된 AccessToken
 class AccessTokenBlacklistSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AccessTokenBlacklist
+        model = TokenBlacklist
         fields = "__all__"
