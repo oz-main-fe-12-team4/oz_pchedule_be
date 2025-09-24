@@ -156,8 +156,8 @@ class LoginView(generics.GenericAPIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 
-# 소셜 로그인
-class SocialLoginView(APIView):
+# ✅ 소셜 로그인
+class SocialLoginView(generics.GenericAPIView):
     def post(self, request):
         provider = request.data.get("provider")
         access_token = request.data.get("access_token")
@@ -215,23 +215,25 @@ class SocialLoginView(APIView):
             )
 
 
-# 로그아웃
-class LogoutView(APIView):
+# ✅ 로그아웃
+class LogoutView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        token = request.auth
-        if token:
-            blacklist_data = {"user": request.user.id, "access_token": str(token)}
-            serializer = AccessTokenBlacklistSerializer(data=blacklist_data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+        refresh_token = request.data.get("refresh_token")
+        if not refresh_token:
+            return Response({"error": "refresh_token이 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # ✅ refresh_token 블랙리스트에 등록
             return Response({"message": "로그아웃이 완료되었습니다."}, status=status.HTTP_200_OK)
-        return Response({"error": "토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        except Exception:
+            return Response({"error": "토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
 
-# 내 정보 조회
-class UserInfoView(APIView):
+# ✅ 내 정보 조회
+class UserInfoView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -239,8 +241,8 @@ class UserInfoView(APIView):
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
 
-# 이름 변경
-class UserNameEditView(APIView):
+# ✅ 이름 변경
+class UserNameEditView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
@@ -256,8 +258,8 @@ class UserNameEditView(APIView):
         return Response({"message": "이름이 수정되었습니다."}, status=status.HTTP_200_OK)
 
 
-# 비밀번호 변경
-class UserPasswordEditView(APIView):
+# ✅ 비밀번호 변경
+class UserPasswordEditView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def patch(self, request):
@@ -281,8 +283,8 @@ class UserPasswordEditView(APIView):
         return Response({"message": "비밀번호가 수정되었습니다."}, status=status.HTTP_200_OK)
 
 
-# 회원 탈퇴
-class UserDeleteView(APIView):
+# ✅ 회원 탈퇴
+class UserDeleteView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
@@ -295,8 +297,8 @@ class UserDeleteView(APIView):
             )
 
 
-# 토큰 재발급
-class TokenRefreshView(APIView):
+# ✅ 토큰 재발급
+class TokenRefreshView(generics.GenericAPIView):
     def post(self, request):
         refresh_token = request.data.get("refresh_token")
         if not refresh_token:
@@ -313,7 +315,7 @@ class TokenRefreshView(APIView):
 # ---------------- 관리자 전용 ---------------- #
 
 
-class UserListView(APIView):
+class UserListView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -325,7 +327,7 @@ class UserListView(APIView):
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
 
-class UserActivateView(APIView):
+class UserActivateView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
@@ -341,7 +343,7 @@ class UserActivateView(APIView):
             return Response({"error": "해당 유저가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
 
 
-class UserDeactivateView(APIView):
+class UserDeactivateView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
