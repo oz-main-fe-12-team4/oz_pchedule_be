@@ -1,27 +1,25 @@
 import requests
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
-from django.shortcuts import get_object_or_404
 from rest_framework import generics, status, serializers
-from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
-from drf_yasg import openapi
-from .models import User, LoginAttempt, Token, AccessTokenBlacklist
+from .models import User, LoginAttempt
 from .serializers import (
     UserSerializer,
     UserInfoSerializer,
     TokenSerializer,
     LoginAttemptSerializer,
-    AccessTokenBlacklistSerializer,
     UserAdminSerializer,
     LoginRequestSerializer,
     LoginResponseSerializer,
-    ErrorResponseSerializer,
+    LogoutSerializer,
+    ChangeNameSerializer,
+    ChangePasswordSerializer,
 )
 
 
@@ -217,10 +215,12 @@ class SocialLoginView(generics.GenericAPIView):
 
 # ✅ 로그아웃
 class LogoutView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
+    serializer_class = LogoutSerializer
 
     def post(self, request):
-        refresh_token = request.data.get("refresh_token")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        refresh_token = serializer.validated_data["refresh_token"]
         if not refresh_token:
             return Response({"error": "refresh_token이 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -241,46 +241,61 @@ class UserInfoView(generics.GenericAPIView):
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
 
-# ✅ 이름 변경
+# 이름 변경
 class UserNameEditView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ChangeNameSerializer
 
     def patch(self, request):
-        name = request.data.get("name")
-        if not name:
-            return Response({"error": "잘못된 형식의 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = self.get_serializer(data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        name = serializer.validated_data.get("name")
 
         if User.objects.exclude(id=request.user.id).filter(name=name).exists():
             return Response({"error": "중복된 닉네임입니다."}, status=status.HTTP_409_CONFLICT)
 
         request.user.name = name
         request.user.save()
+
         return Response({"message": "이름이 수정되었습니다."}, status=status.HTTP_200_OK)
 
 
 # ✅ 비밀번호 변경
 class UserPasswordEditView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = ChangePasswordSerializer
 
     def patch(self, request):
-        current_password = request.data.get("current_password")
-        new_password = request.data.get("new_password")
-        confirm_password = request.data.get("new_password_confirm")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-        if not current_password or not new_password or not confirm_password:
-            return Response({"error": "잘못된 형식의 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        current_password = serializer.validated_data["current_password"]
+        new_password = serializer.validated_data["new_password"]
+        confirm_password = serializer.validated_data["new_password_confirm"]
 
+        # 현재 비밀번호 확인
         if not request.user.check_password(current_password):
-            return Response({"error": "현재 비밀번호가 일치하지 않습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-
-        if new_password != confirm_password:
             return Response(
-                {"error": "비밀번호 확인이 일치하지 않습니다."}, status=status.HTTP_422_UNPROCESSABLE_ENTITY
+                {"error": "현재 비밀번호가 일치하지 않습니다."},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
 
+        # 새 비밀번호와 확인 비밀번호 일치 여부 확인
+        if new_password != confirm_password:
+            return Response(
+                {"error": "비밀번호 확인이 일치하지 않습니다."},
+                status=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            )
+
+        # 비밀번호 변경
         request.user.password = make_password(new_password)
         request.user.save()
-        return Response({"message": "비밀번호가 수정되었습니다."}, status=status.HTTP_200_OK)
+
+        return Response(
+            {"message": "비밀번호가 수정되었습니다."},
+            status=status.HTTP_200_OK,
+        )
 
 
 # ✅ 회원 탈퇴

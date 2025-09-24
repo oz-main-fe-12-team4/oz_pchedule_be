@@ -44,10 +44,9 @@ class Token(models.Model):
     refresh_token = models.CharField(max_length=255)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
-    is_revoked = models.BooleanField(default=False)
 
 
-class AccessTokenBlacklist(models.Model):
+class TokenBlacklist(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    access_token = models.CharField(max_length=1024)
+    refresh_token = models.CharField(max_length=1024)
     revoked_at = models.DateTimeField(auto_now_add=True)
