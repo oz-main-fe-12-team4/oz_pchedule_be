@@ -5,7 +5,7 @@ repos:
       - id: ruff
         args:
           - --fix
-          - --extend-ignore=F403,F401  # wildcard import, unused import 무시
+          - --extend-ignore=F403 # wildcard import
           - --line-length=120
           - --exclude=migrations,venv
           - --select=F,E,W  # 코드 스타일 및 오류 체크만
