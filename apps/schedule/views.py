@@ -1,58 +1,87 @@
-from rest_framework import viewsets
-from rest_framework.decorators import action
+from rest_framework import generics, status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.utils import timezone
-
-from .models import Category, Schedule, DetailSchedule, Recurrence, Weekday
-from .serializers import (
-    CategorySerializer,
-    ScheduleSerializer,
-    DetailScheduleSerializer,
-    RecurrenceSerializer,
-    WeekdaySerializer,
-)
+from .models import Schedule, DetailSchedule
+from .serializers import ScheduleSerializer, DetailScheduleSerializer
 
 
-# --- Category ---
-class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
-    serializer_class = CategorySerializer
-    http_method_names = ["get", "post", "delete"]  # PUT, PATCH 제거
-
-
-# --- Weekday ---
-class WeekdayViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Weekday.objects.all()
-    serializer_class = WeekdaySerializer
-
-
-# --- Schedule ---
-class ScheduleViewSet(viewsets.ModelViewSet):
-    queryset = Schedule.objects.all().select_related("category", "user")
+class ScheduleListCreateAPIView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
     serializer_class = ScheduleSerializer
-    http_method_names = ["get", "post", "delete"]
+
+    def get(self, request):
+        schedules = Schedule.objects.filter(user=request.user, is_deleted=False)
+        serializer = self.get_serializer(schedules, many=True)
+        return Response({"data": serializer.data})
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        # 겹치는 일정 체크
+        start = serializer.validated_data["start_period"]
+        end = serializer.validated_data["end_period"]
+        overlap = Schedule.objects.filter(
+            user=request.user, is_deleted=False, start_period__lt=end, end_period__gt=start
+        ).exists()
+        if overlap:
+            return Response({"error": "겹치는 일정이 존재합니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.save(user=request.user)
+        return Response({"message": "일정이 생성되었습니다."}, status=status.HTTP_201_CREATED)
 
 
-# --- DetailSchedule ---
-class DetailScheduleViewSet(viewsets.ModelViewSet):
-    queryset = DetailSchedule.objects.all().select_related("schedule")
-    serializer_class = DetailScheduleSerializer
-    http_method_names = ["get", "post", "delete"]
+class ScheduleDetailAPIView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = ScheduleSerializer
 
-    @action(detail=True, methods=["post"])
-    def complete(self, request, pk=None):
-        """
-        상세 일정 완료 처리
-        """
-        detail = self.get_object()
+    def get_object(self, schedule_id):
+        return generics.get_object_or_404(Schedule, id=schedule_id, user=self.request.user, is_deleted=False)
+
+    def get(self, request, schedule_id):
+        schedule = self.get_object(schedule_id)
+        serializer = self.get_serializer(schedule)
+        return Response({"data": serializer.data})
+
+    def put(self, request, schedule_id):
+        schedule = self.get_object(schedule_id)
+        serializer = self.get_serializer(schedule, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "일정이 수정되었습니다."})
+
+    def delete(self, request, schedule_id):
+        schedule = self.get_object(schedule_id)
+        schedule.is_deleted = True
+        schedule.save()
+        return Response({"message": "게시물이 삭제되었습니다."}, status=status.HTTP_200_OK)
+
+
+class DetailScheduleCompleteAPIView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, detail_id):
+        detail = generics.get_object_or_404(DetailSchedule, id=detail_id, schedule__user=request.user)
         detail.is_completed = True
-        detail.completed_at = timezone.now()
         detail.save()
-        return Response({"is_completed": detail.is_completed, "completed_at": detail.completed_at})
+        return Response({"message": "일정이 완료되었습니다."})
 
 
-# --- Recurrence ---
-class RecurrenceViewSet(viewsets.ModelViewSet):
-    queryset = Recurrence.objects.all().select_related("schedule")
-    serializer_class = RecurrenceSerializer
-    http_method_names = ["get", "post", "delete"]
+class DetailScheduleUpdateDeleteAPIView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = DetailScheduleSerializer
+
+    def get_object(self, detail_id):
+        return generics.get_object_or_404(DetailSchedule, id=detail_id, schedule__user=self.request.user)
+
+    def put(self, request, detail_id):
+        detail = self.get_object(detail_id)
+        serializer = self.get_serializer(detail, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "일정이 수정되었습니다."})
+
+    def delete(self, request, detail_id):
+        detail = self.get_object(detail_id)
+        detail.delete()
+        return Response({"message": "일정이 삭제되었습니다."})
