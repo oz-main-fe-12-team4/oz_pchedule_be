@@ -1,20 +1,26 @@
-from django.urls import path, include
-from rest_framework.routers import DefaultRouter
+from django.urls import path
 from .views import (
-    CategoryViewSet,
-    WeekdayViewSet,
-    ScheduleViewSet,
-    DetailScheduleViewSet,
-    RecurrenceViewSet,
+    ScheduleListCreateAPIView,
+    ScheduleDetailAPIView,
+    DetailScheduleCompleteAPIView,
+    DetailScheduleUpdateDeleteAPIView,
 )
 
-router = DefaultRouter()
-router.register(r"schedule/categories", CategoryViewSet, basename="category")
-router.register(r"schedule/weekdays", WeekdayViewSet, basename="weekday")
-router.register(r"schedule/schedules", ScheduleViewSet, basename="schedule")
-router.register(r"schedule/details", DetailScheduleViewSet, basename="detailschedule")
-router.register(r"schedule/recurrences", RecurrenceViewSet, basename="recurrence")
-
 urlpatterns = [
-    path("", include(router.urls)),
+    # 일정 목록 조회 / 생성
+    path("schedules", ScheduleListCreateAPIView.as_view(), name="schedule-list-create"),
+    # 일정 상세 조회 / 수정 / 삭제
+    path("schedules/<int:schedule_id>", ScheduleDetailAPIView.as_view(), name="schedule-detail"),
+    # 세부 일정 완료 처리
+    path(
+        "detail-schedules/<int:detail_id>/complete",
+        DetailScheduleCompleteAPIView.as_view(),
+        name="detail-schedule-complete",
+    ),
+    # 세부 일정 수정 / 삭제
+    path(
+        "detail-schedules/<int:detail_id>",
+        DetailScheduleUpdateDeleteAPIView.as_view(),
+        name="detail-schedule-update-delete",
+    ),
 ]

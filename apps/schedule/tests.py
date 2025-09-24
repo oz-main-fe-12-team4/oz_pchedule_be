@@ -4,37 +4,38 @@ from .models import Category, Schedule, DetailSchedule
 from django.utils import timezone
 from datetime import timedelta
 
-
 User = get_user_model()
 
 
 class ScheduleModelTest(TestCase):
     def setUp(self):
-        self.user = User.objects.create(username="tester")
+        self.user = User.objects.create_user(username="testuser", email="test@test.com", password="1234")
         self.category = Category.objects.create(name="일상")
 
     def test_schedule_creation(self):
         schedule = Schedule.objects.create(
             user=self.user,
-            title="Test Schedule",
-            category=self.category,
+            title="테스트 일정",
             start_period=timezone.now(),
             end_period=timezone.now() + timedelta(hours=1),
+            category=self.category,
         )
-        self.assertEqual(schedule.title, "Test Schedule")
+        self.assertEqual(schedule.title, "테스트 일정")
+        self.assertFalse(schedule.is_deleted)
 
-    def test_detail_schedule_within_period(self):
+    def test_detail_schedule_creation(self):
         schedule = Schedule.objects.create(
             user=self.user,
-            title="Main Schedule",
-            category=self.category,
+            title="테스트 일정",
             start_period=timezone.now(),
-            end_period=timezone.now() + timedelta(days=1),
+            end_period=timezone.now() + timedelta(hours=1),
+            category=self.category,
         )
         detail = DetailSchedule.objects.create(
             schedule=schedule,
-            title="Detail Task",
+            title="세부 일정",
             start_time=timezone.now(),
-            end_time=timezone.now() + timedelta(hours=2),
+            end_time=timezone.now() + timedelta(minutes=30),
         )
+        self.assertEqual(detail.schedule, schedule)
         self.assertFalse(detail.is_completed)
