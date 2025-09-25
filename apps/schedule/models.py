@@ -34,6 +34,7 @@ class Schedule(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="중간", null=False)
     share_type = models.CharField(max_length=10, choices=SHARE_CHOICES, default="비공개")
+    is_someday = models.BooleanField(default=False)
     is_recurrence = models.BooleanField(default=False)
     recurrence_type = models.CharField(max_length=10, blank=True, null=True)  # daily, weekly, monthly, yearly
     recurrence_weekdays = models.JSONField(blank=True, null=True)  # ["월", "화"]

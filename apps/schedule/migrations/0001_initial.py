@@ -194,10 +194,10 @@ class Migration(migrations.Migration):
             index=models.Index(fields=["user", "created_at"], name="schedule_sc_user_id_91198c_idx"),
         ),
         migrations.AddIndex(
-            model_name="detailschedule",
+            model_name="detail_schedule",
             index=models.Index(
                 fields=["schedule", "start_time", "end_time"],
-                name="schedule_de_schedul_972990_idx",
+                name="schedule_de_schedule_972990_idx",
             ),
         ),
     ]

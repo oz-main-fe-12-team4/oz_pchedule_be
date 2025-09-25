@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="category_id",
         ),
         migrations.RemoveField(
-            model_name="detailschedule",
+            model_name="detail_schedule",
             name="detail_id",
         ),
         migrations.RemoveField(
@@ -36,7 +36,7 @@ class Migration(migrations.Migration):
             field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
         ),
         migrations.AddField(
-            model_name="detailschedule",
+            model_name="detail_schedule",
             name="id",
             field=models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID"),
         ),

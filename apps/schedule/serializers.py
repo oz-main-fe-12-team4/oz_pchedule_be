@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Schedule, DetailSchedule, Category
+from .models import Schedule, DetailSchedule
 
 
 class DetailScheduleSerializer(serializers.ModelSerializer):
@@ -28,6 +28,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "recurrence_weekdays",
             "recurrence_day_of_month",
             "recurrence_month_of_year",
+            "is_someday",
             "detail_schedule",
         ]
 
