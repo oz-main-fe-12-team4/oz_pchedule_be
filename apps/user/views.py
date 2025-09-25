@@ -20,6 +20,7 @@ from .serializers import (
     LogoutSerializer,
     ChangeNameSerializer,
     ChangePasswordSerializer,
+    SocialLoginSerializer,
 )
 
 
@@ -156,9 +157,14 @@ class LoginView(generics.GenericAPIView):
 
 # ✅ 소셜 로그인
 class SocialLoginView(generics.GenericAPIView):
+    serializer_class = SocialLoginSerializer  # ✅ swagger에 request body 노출됨
+
     def post(self, request):
-        provider = request.data.get("provider")
-        access_token = request.data.get("access_token")
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        provider = serializer.validated_data["provider"]
+        access_token = serializer.validated_data["access_token"]
 
         try:
             if provider == "kakao":
