@@ -3,21 +3,20 @@ from datetime import datetime
 from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
-from rest_framework import generics, status, serializers
+from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
+
 from .models import User, LoginAttempt
+from .permissions import IsCustomAdmin
 from .serializers import (
     UserSerializer,
     UserInfoSerializer,
-    TokenSerializer,
     LoginAttemptSerializer,
     UserAdminSerializer,
     LoginRequestSerializer,
-    LoginResponseSerializer,
-    LogoutSerializer,
     ChangeNameSerializer,
     ChangePasswordSerializer,
     SocialLoginSerializer,
@@ -30,38 +29,49 @@ class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-    def perform_create(self, serializer):
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
         email = serializer.validated_data.get("email")
         name = serializer.validated_data.get("name")
 
         try:
             if User.objects.filter(email=email).exists():
-                raise serializers.ValidationError(
+                return Response(
                     {"error": "이메일이 중복되었습니다."},
-                    code=status.HTTP_409_CONFLICT,
+                    status=status.HTTP_409_CONFLICT,
                 )
             if User.objects.filter(name=name).exists():
-                raise serializers.ValidationError(
+                return Response(
                     {"error": "닉네임이 중복되었습니다."},
-                    code=status.HTTP_409_CONFLICT,
+                    status=status.HTTP_409_CONFLICT,
                 )
 
             password = serializer.validated_data.get("password")
             if not password or len(password) < 6:
-                raise serializers.ValidationError(
-                    {"error": "이메일 또는 닉네임 또는 비밀번호의 유효성 검사를 통과하지 못했습니다."},
-                    code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                return Response(
+                    {"error": "비밀번호는 최소 6자리 이상이어야 합니다."},
+                    status=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 )
 
-            serializer.save(password=make_password(password))
+            # 저장 (비밀번호 해싱 포함)
+            self.perform_create(serializer)
 
-        except serializers.ValidationError:
-            raise
         except Exception:
-            raise serializers.ValidationError(
+            return Response(
                 {"error": "예기치 못한 서버 오류가 발생했습니다."},
-                code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+        return Response(
+            {"message": "회원가입이 완료되었습니다."},
+            status=status.HTTP_201_CREATED,
+        )
+
+    def perform_create(self, serializer):
+        password = serializer.validated_data.get("password")
+        serializer.save(password=make_password(password))
 
 
 class LoginView(generics.GenericAPIView):
@@ -70,13 +80,13 @@ class LoginView(generics.GenericAPIView):
     @swagger_auto_schema(
         request_body=LoginRequestSerializer,  # 요청 바디 스키마
         responses={
-            200: LoginResponseSerializer,  # 응답 스키마
+            200: "로그인 성공 (쿠키에 토큰 저장됨)",  # 응답 스키마
             400: "잘못된 요청 (이메일/비밀번호 누락)",
             401: "이메일 또는 비밀번호가 올바르지 않음",
             403: "정지된 계정",
             429: "로그인 시도 제한 초과",
         },
-        operation_description="사용자 로그인 (이메일 + 비밀번호)",
+        operation_description="사용자 로그인 (이메일 + 비밀번호, HttpOnly Cookie에 토큰 저장)",
     )
     def post(self, request):
         # ✅ 요청 데이터 검증
@@ -124,17 +134,7 @@ class LoginView(generics.GenericAPIView):
         # ✅ JWT 발급
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
-
-        # 토큰 저장
-        token_data = {
-            "user": user.id,
-            "refresh_token": str(refresh),
-            "expires_at": datetime.fromtimestamp(refresh.access_token.payload["exp"]),
-            "is_revoked": False,
-        }
-        token_serializer = TokenSerializer(data=token_data)
-        token_serializer.is_valid(raise_exception=True)
-        token_serializer.save()
+        refresh_token = str(refresh)
 
         # 성공한 로그인 기록
         login_attempt_data = {
@@ -146,13 +146,31 @@ class LoginView(generics.GenericAPIView):
         success_serializer.is_valid(raise_exception=True)
         success_serializer.save()
 
-        # ✅ LoginResponseSerializer 스키마와 맞는 응답 반환
-        response_data = {
-            "message": "로그인이 완료되었습니다.",
-            "access_token": access_token,
-            "refresh_token": str(refresh),
-        }
-        return Response(response_data, status=status.HTTP_200_OK)
+        # ✅ 응답 생성 (쿠키에 토큰 저장)
+        response = Response({"message": "로그인이 완료되었습니다."}, status=status.HTTP_200_OK)
+
+        # Access Token 쿠키 저장
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            max_age=60 * 5,
+        )
+
+        # Refresh Token 쿠키 저장 (추가 권장)
+        response.set_cookie(
+            key="refresh_token",
+            value=refresh_token,
+            httponly=True,
+            secure=True,
+            samesite="Lax",
+            max_age=60 * 60 * 24 * 7,
+        )
+
+        # ✅ 반드시 return 해야 함
+        return response
 
 
 # ✅ 소셜 로그인
@@ -221,12 +239,9 @@ class SocialLoginView(generics.GenericAPIView):
 
 # ✅ 로그아웃
 class LogoutView(generics.GenericAPIView):
-    serializer_class = LogoutSerializer
 
     def post(self, request):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        refresh_token = serializer.validated_data["refresh_token"]
+        refresh_token = request.COOKIES["refresh_token"]
         if not refresh_token:
             return Response({"error": "refresh_token이 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -337,7 +352,7 @@ class TokenRefreshView(generics.GenericAPIView):
 
 
 class UserListView(generics.GenericAPIView):
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsCustomAdmin]
 
     def get(self, request):
         if not request.user.is_admin:

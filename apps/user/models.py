@@ -37,16 +37,3 @@ class LoginAttempt(models.Model):
     login_attempt_time = models.DateTimeField(auto_now_add=True)
     is_success = models.BooleanField()
     ip_address = models.CharField(max_length=45)
-
-
-class Token(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    refresh_token = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField()
-
-
-class TokenBlacklist(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    refresh_token = models.CharField(max_length=1024)
-    revoked_at = models.DateTimeField(auto_now_add=True)
