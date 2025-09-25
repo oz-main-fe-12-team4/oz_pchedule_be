@@ -165,7 +165,8 @@ AUTHENTICATION_BACKENDS = [
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
-    "ROTATE_REFRESH_TOKENS": True,
+    "ROTATE_REFRESH_TOKENS": True,  # Refresh Token을 새로 발급할 때마다 교체
+    "BLACKLIST_AFTER_ROTATION": True,  # 교체된 이전 Refresh Token은 블랙리스트에 넣기
 }
 
 AUTH_USER_MODEL = "user.User"

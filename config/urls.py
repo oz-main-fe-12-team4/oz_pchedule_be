@@ -19,6 +19,7 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularSwaggerView, SpectacularRedocView, SpectacularAPIView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 
 urlpatterns = [
@@ -30,4 +31,6 @@ urlpatterns = [
     path("schedule/", include("apps.schedule.urls")),
     path("schedule/<int:pk>/", include("apps.interactions.urls")),
     path("notifications/", include("apps.notification.urls")),
+    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]
