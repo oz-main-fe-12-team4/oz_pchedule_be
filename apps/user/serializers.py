@@ -36,6 +36,12 @@ class LoginResponseSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
 
 
+# 소셜 로그인
+class SocialLoginSerializer(serializers.Serializer):
+    provider = serializers.ChoiceField(choices=["kakao", "google", "naver"])
+    access_token = serializers.CharField()
+
+
 # 로그아웃
 class LogoutSerializer(serializers.Serializer):
     refresh_token = serializers.CharField()
