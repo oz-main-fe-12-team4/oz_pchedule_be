@@ -8,7 +8,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework_simplejwt.views import TokenObtainPairView
-
 from .models import User, LoginAttempt
 from .permissions import IsCustomAdmin
 from .serializers import (
