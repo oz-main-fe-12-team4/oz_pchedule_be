@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
 from .models import User, LoginAttempt
 from django.contrib.auth.hashers import make_password
 
@@ -92,3 +94,17 @@ class LoginAttemptSerializer(serializers.ModelSerializer):
     class Meta:
         model = LoginAttempt
         fields = "__all__"
+
+
+# is_admin 토큰
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["is_admin"] = user.is_admin  # 토큰 payload에 포함
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data["is_admin"] = self.user.is_admin  # 응답에 추가
+        return data

@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import User, LoginAttempt
 from .permissions import IsCustomAdmin
@@ -20,6 +21,7 @@ from .serializers import (
     ChangeNameSerializer,
     ChangePasswordSerializer,
     SocialLoginSerializer,
+    CustomTokenObtainPairSerializer,
 )
 
 
@@ -393,3 +395,7 @@ class UserDeactivateView(generics.GenericAPIView):
             return Response({"message": "계정이 비활성화되었습니다."}, status=status.HTTP_200_OK)
         except User.DoesNotExist:
             return Response({"error": "해당 유저가 존재하지 않습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
