@@ -8,11 +8,12 @@ from .views import (
     UserNameEditView,
     UserPasswordEditView,
     UserDeleteView,
-    TokenRefreshView,
     UserListView,
     UserActivateView,
     UserDeactivateView,
+    CustomTokenObtainPairView,
 )
+from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     # 회원 관련
@@ -24,9 +25,11 @@ urlpatterns = [
     path("me/name", UserNameEditView.as_view(), name="user-name-update"),
     path("me/password", UserPasswordEditView.as_view(), name="user-password-change"),
     path("me/withdraw", UserDeleteView.as_view(), name="user-delete"),
-    path("token/refresh", TokenRefreshView.as_view(), name="token-refresh"),
+    # path("token/refresh", TokenRefreshView.as_view(), name="token-refresh"),
     # 관리자 전용
     path("users", UserListView.as_view(), name="admin-user-list"),
     path("users/<int:user_id>/activate", UserActivateView.as_view(), name="admin-user-activate"),
     path("users/<int:user_id>/deactivate", UserDeactivateView.as_view(), name="admin-user-deactivate"),
+    path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
 ]

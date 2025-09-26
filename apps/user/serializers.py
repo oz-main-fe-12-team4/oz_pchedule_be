@@ -1,25 +1,24 @@
 from rest_framework import serializers
-from .models import User, LoginAttempt, Token, TokenBlacklist
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from .models import User, LoginAttempt
+from django.contrib.auth.hashers import make_password
+
+from ..interactions.models import Report
 
 
 # 회원가입 / 유저 생성
 class UserSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source="id", read_only=True)
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
     password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(write_only=True)
+    name = serializers.CharField(write_only=True)
 
     class Meta:
         model = User
         fields = [
-            "user_id",
             "email",
             "password",
             "name",
-            "profile_image",
-            "allow_notification",
-            "created_at",
-            "updated_at",
         ]
 
 
@@ -32,19 +31,12 @@ class LoginRequestSerializer(serializers.Serializer):
 # 로그인 응답
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
-    access_token = serializers.CharField()
-    refresh_token = serializers.CharField()
 
 
 # 소셜 로그인
 class SocialLoginSerializer(serializers.Serializer):
     provider = serializers.ChoiceField(choices=["kakao", "google", "naver"])
     access_token = serializers.CharField()
-
-
-# 로그아웃
-class LogoutSerializer(serializers.Serializer):
-    refresh_token = serializers.CharField()
 
 
 #  에러 응답
@@ -85,16 +77,16 @@ class UserInfoSerializer(serializers.ModelSerializer):
 
 # 관리자 전용 유저 리스트 응답
 class UserAdminSerializer(serializers.ModelSerializer):
+    report_reason = serializers.SerializerMethodField()
+
     class Meta:
         model = User
-        fields = ["id", "email", "name", "is_active", "is_reported", "report_reason"]
+        fields = ["id", "email", "name", "is_admin", "report_reason"]
 
-
-# 토큰
-class TokenSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Token
-        fields = "__all__"
+    def get_report_reason(self, obj):
+        # User 와 연결된 Report 모델에서 이유만 뽑아내기
+        report = Report.objects.filter(user=obj).first()
+        return report.reason if report else None
 
 
 # 로그인 시도 기록
@@ -104,8 +96,15 @@ class LoginAttemptSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-# 블랙리스트 처리된 AccessToken
-class AccessTokenBlacklistSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = TokenBlacklist
-        fields = "__all__"
+# is_admin 토큰
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["is_admin"] = user.is_admin  # 토큰 payload에 포함
+        return token
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+        data["is_admin"] = self.user.is_admin  # 응답에 추가
+        return data
