@@ -58,7 +58,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 # 내 정보 조회 응답
 class UserInfoSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(source="id", read_only=True)
+    id = serializers.IntegerField(read_only=True)
     total_like = serializers.IntegerField(default=0)
     total_bookmark = serializers.IntegerField(default=0)
 
