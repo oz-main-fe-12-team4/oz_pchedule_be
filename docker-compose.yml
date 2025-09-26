@@ -4,20 +4,17 @@ services:
       context: .
       dockerfile: dockerfile.dev
     container_name: django_dev
-    command: python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:
       - .:/app
+    env_file:
+      - ./.env
     environment:
-      - DEBUG=1
-      - DB_NAME=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
     depends_on:
       - db
+    restart: unless-stopped
 
   prod:
     build:
@@ -26,15 +23,13 @@ services:
     container_name: django_prod
     ports:
       - "8000:8000"
+    volumes:
+      - .:/app
     environment:
-      - DEBUG=0
-      - DB_NAME=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
-      - DB_HOST=db
-      - DB_PORT=5432
+      - DJANGO_SETTINGS_MODULE=config.settings.prod
     depends_on:
       - db
+    restart: unless-stopped
     deploy:
       resources:
         limits:
@@ -42,7 +37,7 @@ services:
 
   db:
     image: postgres:15
-    restart: always
+    restart: unless-stopped
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
