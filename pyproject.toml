@@ -10,6 +10,7 @@ dependencies = [
     "djangorestframework>=3.16.1",
     "djangorestframework-simplejwt>=5.5.1",
     "docker>=7.1.0",
+    "gunicorn>=23.0.0",
     "psycopg[binary]>=3.2.10",
 ]
 
