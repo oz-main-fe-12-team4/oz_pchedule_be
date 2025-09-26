@@ -6,7 +6,9 @@ DEBUG = True
 
 load_dotenv(BASE_DIR / ".env")  # noqa: F405
 
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,0.0.0.0").split(",")
 
 DATABASES = {
     "default": {
