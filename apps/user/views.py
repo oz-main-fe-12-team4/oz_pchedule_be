@@ -21,6 +21,7 @@ from .serializers import (
     ChangePasswordSerializer,
     SocialLoginSerializer,
     CustomTokenObtainPairSerializer,
+    LoginResponseSerializer,
 )
 
 
@@ -38,16 +39,16 @@ class SignupView(generics.CreateAPIView):
         name = serializer.validated_data.get("name")
 
         try:
-            errors = {}
+            errors = []
 
             if User.objects.filter(email=email).exists():
-                errors["email"] = "이메일이 중복되었습니다."
+                errors.append("이메일이 중복되었습니다.")
 
             if User.objects.filter(name=name).exists():
-                errors["name"] = "닉네임이 중복되었습니다."
+                errors.append("닉네임이 중복되었습니다.")
 
             if errors:
-                return Response(errors, status=status.HTTP_409_CONFLICT)
+                return Response({"errors": errors}, status=status.HTTP_409_CONFLICT)
 
             password = serializer.validated_data.get("password")
             if not password or len(password) < 6:
@@ -81,7 +82,7 @@ class LoginView(generics.GenericAPIView):
     @swagger_auto_schema(
         request_body=LoginRequestSerializer,  # 요청 바디 스키마
         responses={
-            200: "로그인 성공 (쿠키에 토큰 저장됨)",  # 응답 스키마
+            200: LoginResponseSerializer,  # ✅ 응답 스키마를 시리얼라이저로 교체
             400: "잘못된 요청 (이메일/비밀번호 누락)",
             401: "이메일 또는 비밀번호가 올바르지 않음",
             403: "정지된 계정",
@@ -147,8 +148,11 @@ class LoginView(generics.GenericAPIView):
         success_serializer.is_valid(raise_exception=True)
         success_serializer.save()
 
-        # ✅ 응답 생성 (쿠키에 토큰 저장)
-        response = Response({"message": "로그인이 완료되었습니다."}, status=status.HTTP_200_OK)
+        # ✅ 응답 데이터 (시리얼라이저 활용)
+        response_data = {"message": "로그인이 완료되었습니다.", "is_admin": user.is_admin}
+        response_serializer = LoginResponseSerializer(response_data)
+
+        response = Response(response_serializer.data, status=status.HTTP_200_OK)
 
         # Access Token 쿠키 저장
         response.set_cookie(
@@ -170,7 +174,6 @@ class LoginView(generics.GenericAPIView):
             max_age=60 * 60 * 24 * 7,
         )
 
-        # ✅ 반드시 return 해야 함
         return response
 
 
