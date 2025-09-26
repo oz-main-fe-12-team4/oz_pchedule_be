@@ -1,5 +1,4 @@
 import requests
-from datetime import datetime
 from django.utils import timezone
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
@@ -39,16 +38,16 @@ class SignupView(generics.CreateAPIView):
         name = serializer.validated_data.get("name")
 
         try:
+            errors = {}
+
             if User.objects.filter(email=email).exists():
-                return Response(
-                    {"error": "이메일이 중복되었습니다."},
-                    status=status.HTTP_409_CONFLICT,
-                )
+                errors["email"] = "이메일이 중복되었습니다."
+
             if User.objects.filter(name=name).exists():
-                return Response(
-                    {"error": "닉네임이 중복되었습니다."},
-                    status=status.HTTP_409_CONFLICT,
-                )
+                errors["name"] = "닉네임이 중복되었습니다."
+
+            if errors:
+                return Response(errors, status=status.HTTP_409_CONFLICT)
 
             password = serializer.validated_data.get("password")
             if not password or len(password) < 6:
