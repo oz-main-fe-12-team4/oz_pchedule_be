@@ -9,7 +9,9 @@ services:
     volumes:
       - .:/app
     env_file:
-      - .env
+      - ./.env
+    environment:
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
     depends_on:
       - db
     restart: unless-stopped
@@ -24,12 +26,7 @@ services:
     volumes:
       - .:/app
     environment:
-      - DEBUG=0
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
+      - DJANGO_SETTINGS_MODULE=config.settings.prod
     depends_on:
       - db
     restart: unless-stopped

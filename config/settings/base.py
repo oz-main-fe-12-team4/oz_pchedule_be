@@ -1,10 +1,7 @@
-import os
 from pathlib import Path
 from datetime import timedelta
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 DJANGO_APPS = [
     "django.contrib.admin",
