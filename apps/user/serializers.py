@@ -2,7 +2,6 @@ from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from .models import User, LoginAttempt
-from django.contrib.auth.hashers import make_password
 
 from ..interactions.models import Report
 
@@ -31,6 +30,7 @@ class LoginRequestSerializer(serializers.Serializer):
 # 로그인 응답
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
+    is_admin = serializers.BooleanField()
 
 
 # 소셜 로그인
@@ -58,14 +58,14 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 # 내 정보 조회 응답
 class UserInfoSerializer(serializers.ModelSerializer):
-    user_id = serializers.IntegerField(source="id", read_only=True)
+    id = serializers.IntegerField(source="id", read_only=True)
     total_like = serializers.IntegerField(default=0)
     total_bookmark = serializers.IntegerField(default=0)
 
     class Meta:
         model = User
         fields = [
-            "user_id",
+            "id",
             "email",
             "name",
             "profile_image",
