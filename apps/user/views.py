@@ -160,7 +160,7 @@ class LoginView(generics.GenericAPIView):
             httponly=True,
             secure=True,
             samesite="Lax",
-            max_age=60 * 5,
+            max_age=60 * 60,
         )
 
         # Refresh Token 쿠키 저장 (추가 권장)
@@ -240,20 +240,34 @@ class SocialLoginView(generics.GenericAPIView):
             )
 
 
-# ✅ 로그아웃
 class LogoutView(generics.GenericAPIView):
-
     def post(self, request):
-        refresh_token = request.COOKIES["refresh_token"]
+        refresh_token = request.COOKIES.get("refresh_token")  # ✅ .get() 안전하게
         if not refresh_token:
-            return Response({"error": "refresh_token이 필요합니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "refresh_token이 필요합니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             token = RefreshToken(refresh_token)
             token.blacklist()  # ✅ refresh_token 블랙리스트에 등록
-            return Response({"message": "로그아웃이 완료되었습니다."}, status=status.HTTP_200_OK)
+
+            response = Response(
+                {"message": "로그아웃이 완료되었습니다."},
+                status=status.HTTP_200_OK,
+            )
+            # ✅ 쿠키 삭제
+            response.delete_cookie("access_token")
+            response.delete_cookie("refresh_token")
+            response.delete_cookie("csrftoken")
+            return response
+
         except Exception:
-            return Response({"error": "토큰 인증에 실패했습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {"error": "토큰 인증에 실패했습니다."},
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
 
 # ✅ 내 정보 조회
@@ -359,11 +373,30 @@ class UserListView(generics.GenericAPIView):
 
     def get(self, request):
         if not request.user.is_admin:
-            return Response({"error": "관리자 권한이 필요합니다."}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"error": "관리자 권한이 필요합니다."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
-        users = User.objects.all()
-        serializer = UserAdminSerializer(users, many=True)
-        return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+        queryset = User.objects.all().prefetch_related("reports")
+        serializer = UserAdminSerializer(queryset, many=True)
+
+        # ✅ 통계 데이터
+        total_users = queryset.count()
+        reported_users = queryset.filter(reports__isnull=False).distinct().count()
+        inactive_users = queryset.filter(is_active=False).count()
+
+        return Response(
+            {
+                "summary": {
+                    "total_users": total_users,
+                    "reported_users": reported_users,
+                    "inactive_users": inactive_users,
+                },
+                "users": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class UserActivateView(generics.GenericAPIView):

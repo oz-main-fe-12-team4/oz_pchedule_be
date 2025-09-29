@@ -1,9 +1,8 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
 from .models import User, LoginAttempt
 
-from ..interactions.models import Report
+from apps.interactions.models import Report, Like, Bookmark
 
 
 # 회원가입 / 유저 생성
@@ -58,9 +57,10 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 # 내 정보 조회 응답
 class UserInfoSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
-    total_like = serializers.IntegerField(default=0)
-    total_bookmark = serializers.IntegerField(default=0)
+    total_like = serializers.SerializerMethodField()
+    total_bookmark = serializers.SerializerMethodField()
+    my_likes = serializers.SerializerMethodField()
+    my_bookmarks = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -72,7 +72,22 @@ class UserInfoSerializer(serializers.ModelSerializer):
             "allow_notification",
             "total_like",
             "total_bookmark",
+            "my_likes",
+            "my_bookmarks",
+            "is_admin",
         ]
+
+    def get_total_like(self, obj):
+        return Like.objects.filter(user=obj).count()
+
+    def get_total_bookmark(self, obj):
+        return Bookmark.objects.filter(user=obj).count()
+
+    def get_my_likes(self, obj):
+        return list(Like.objects.filter(user=obj).values_list("schedule_id", flat=True))
+
+    def get_my_bookmarks(self, obj):
+        return list(Bookmark.objects.filter(user=obj).values_list("schedule_id", flat=True))
 
 
 # 관리자 전용 유저 리스트 응답
@@ -81,7 +96,7 @@ class UserAdminSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "email", "name", "is_admin", "report_reason"]
+        fields = ["id", "email", "name", "is_admin", "report_reason", "is_active", "is_reported"]
 
     def get_report_reason(self, obj):
         # User 와 연결된 Report 모델에서 이유만 뽑아내기
