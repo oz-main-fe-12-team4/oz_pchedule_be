@@ -1,7 +1,10 @@
+from dotenv import load_dotenv
 from .base import *
 import os
 
 DEBUG = False
+
+load_dotenv(BASE_DIR / ".env")  # noqa: F405
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
