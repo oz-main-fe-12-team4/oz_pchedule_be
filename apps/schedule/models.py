@@ -11,7 +11,6 @@ PRIORITY_CHOICES = [
 
 SHARE_CHOICES = [
     ("비공개", "비공개"),
-    ("친구공개", "친구공개"),
     ("전체공개", "전체공개"),
 ]
 
@@ -32,23 +31,56 @@ class Schedule(models.Model):
     start_period = models.DateTimeField()
     end_period = models.DateTimeField()
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="중간", null=False)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="중간")
     share_type = models.CharField(max_length=10, choices=SHARE_CHOICES, default="비공개")
     is_someday = models.BooleanField(default=False)
-    is_recurrence = models.BooleanField(default=False)
-    recurrence_type = models.CharField(max_length=10, blank=True, null=True)  # daily, weekly, monthly, yearly
-    recurrence_weekdays = models.JSONField(blank=True, null=True)  # ["월", "화"]
-    recurrence_day_of_month = models.IntegerField(blank=True, null=True)
-    recurrence_month_of_year = models.IntegerField(blank=True, null=True)
+    is_deleted = models.BooleanField(default=False)
+    is_complete = models.BooleanField(default=False)  # ✅ 이름 변경
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_deleted = models.BooleanField(default=False)
 
     class Meta:
         db_table = "schedule"
 
+    def save(self, *args, **kwargs):
+        # is_complete True → False 강제
+        if self.is_complete:
+            self.is_complete = False
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.title} ({self.user.username})"
+
+
+class Weekday(models.Model):
+    code = models.CharField(max_length=2, unique=True)
+    name = models.CharField(max_length=10)
+
+    class Meta:
+        db_table = "weekday"
+
+    def __str__(self):
+        return self.name
+
+
+class RecurrenceRule(models.Model):
+    FREQUENCY_CHOICES = [
+        ("DAILY", "Daily"),
+        ("WEEKLY", "Weekly"),
+        ("MONTHLY", "Monthly"),
+        ("YEARLY", "Yearly"),
+    ]
+
+    schedule = models.OneToOneField(Schedule, on_delete=models.CASCADE, related_name="recurrence_rule")
+    frequency = models.CharField(max_length=10, choices=FREQUENCY_CHOICES)
+    interval = models.PositiveIntegerField(default=1)
+    by_day = models.ManyToManyField(Weekday, blank=True)
+    by_month = models.PositiveIntegerField(null=True, blank=True)
+    by_month_day = models.PositiveIntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = "recurrence_rule"
 
 
 class DetailSchedule(models.Model):

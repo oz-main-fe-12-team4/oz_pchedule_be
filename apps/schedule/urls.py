@@ -1,22 +1,16 @@
+# urls.py
 from django.urls import path
 from .views import (
-    ScheduleListCreateAPIView,
-    ScheduleDetailAPIView,
-    DetailScheduleCompleteAPIView,
+    ScheduleListAPIView,
+    ScheduleCreateAPIView,
     DetailScheduleUpdateDeleteAPIView,
 )
 
 urlpatterns = [
-    path("schedules", ScheduleListCreateAPIView.as_view(), name="schedule-list-create"),
-    path("schedules/<int:schedule_id>", ScheduleDetailAPIView.as_view(), name="schedule-detail"),
-    path(
-        "detail-schedules/<int:detail_id>/complete",
-        DetailScheduleCompleteAPIView.as_view(),
-        name="detail-schedule-complete",
-    ),
-    path(
-        "detail-schedules/<int:detail_id>",
-        DetailScheduleUpdateDeleteAPIView.as_view(),
-        name="detail-schedule-update-delete",
-    ),
+    # 일정 전체 조회
+    path("schedules/", ScheduleListAPIView.as_view(), name="schedule-list"),
+    # 일정 생성
+    path("schedules/create/", ScheduleCreateAPIView.as_view(), name="schedule-create"),
+    # 일정 상세 조회 / 수정 / 삭제 / 완료 토글
+    path("schedules/<int:pk>/", DetailScheduleUpdateDeleteAPIView.as_view(), name="schedule-detail"),
 ]
