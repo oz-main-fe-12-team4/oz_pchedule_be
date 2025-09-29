@@ -1,0 +1,20 @@
+django==5.2.6
+django-cors-headers==4.9.0
+djangorestframework==3.16.1
+djangorestframework-simplejwt==5.5.1
+drf-spectacular==0.28.0
+drf-yasg==1.21.10
+
+gunicorn==23.0.0
+uvicorn==0.35.0   # ASGI 서버 (gunicorn worker로도 같이 씀)
+
+psycopg==3.2.10          # PostgreSQL 드라이버
+psycopg-binary==3.2.10   # (둘 중 하나만 쓰면 됨 → 보통 binary만 남김)
+
+python-dotenv==1.1.1     # 환경변수 관리
+pytz==2025.2             # 시간대 관리
+sqlparse==0.5.3          # Django에서 SQL 파싱용
+tzdata==2025.2           # 타임존 데이터 (리눅스 환경에서 필요)
+
+PyJWT==2.10.1            # JWT 직접 쓸 경우
+requests==2.32.5         # 외부 API 호출시

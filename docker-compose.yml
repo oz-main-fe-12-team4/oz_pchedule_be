@@ -23,25 +23,22 @@ services:
     container_name: django_prod
     ports:
       - "8000:8000"
-    volumes:
-      - .:/app
+    env_file:
+      - ./.env
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.prod
     depends_on:
       - db
     restart: unless-stopped
-    deploy:
-      resources:
-        limits:
-          memory: 512m
+    mem_limit: 512m
 
   db:
     image: postgres:15
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
