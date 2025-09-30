@@ -5,6 +5,7 @@ from .models import Schedule
 from .serializers import ScheduleSerializer
 
 
+# 일정 리스트 조회
 class ScheduleListAPIView(generics.ListAPIView):
     serializer_class = ScheduleSerializer
     permission_classes = [IsAuthenticated]
@@ -12,8 +13,8 @@ class ScheduleListAPIView(generics.ListAPIView):
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
-            return Schedule.objects.filter(is_deleted=False)
-        return Schedule.objects.filter(user=user, is_deleted=False)
+            return Schedule.objects.all()
+        return Schedule.objects.filter(user=user)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -21,6 +22,7 @@ class ScheduleListAPIView(generics.ListAPIView):
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
 
 
+# 일정 생성
 class ScheduleCreateAPIView(generics.CreateAPIView):
     serializer_class = ScheduleSerializer
     permission_classes = [IsAuthenticated]
@@ -32,21 +34,19 @@ class ScheduleCreateAPIView(generics.CreateAPIView):
         return Response({"data": serializer.data}, status=status.HTTP_201_CREATED)
 
 
-class DetailScheduleUpdateDeleteAPIView(generics.RetrieveUpdateDestroyAPIView):
+# 일정 상세 조회 / 수정 / 삭제
+class ScheduleDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ScheduleSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
         if user.is_staff:
-            return Schedule.objects.filter(is_deleted=False)
-        return Schedule.objects.filter(user=user, is_deleted=False)
+            return Schedule.objects.all()
+        return Schedule.objects.filter(user=user)
 
-    # 완료 토글 처리
-    def patch(self, request, *args, **kwargs):
+    # DELETE 요청
+    def delete(self, request, *args, **kwargs):
         schedule = self.get_object()
-        if "toggle_complete" in request.data:
-            schedule.is_complete = not schedule.is_complete  #
-            schedule.save()
-            return Response({"data": {"is_complete": schedule.is_complete}}, status=status.HTTP_200_OK)
-        return self.partial_update(request, *args, **kwargs)
+        schedule.delete()
+        return Response({"data": {"message": "Schedule deleted"}}, status=status.HTTP_200_OK)
