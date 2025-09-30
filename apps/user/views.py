@@ -21,7 +21,7 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     LoginResponseSerializer,
 )
-from utils.dummy_serializer import DummySerializer
+from apps.core.dummy_serializer import DummySerializer
 
 
 # ---------------- 회원 관련 ---------------- #
