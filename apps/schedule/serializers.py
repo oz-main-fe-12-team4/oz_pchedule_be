@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Schedule, DetailSchedule, RecurrenceRule, Weekday
+from .profanity_filter import contains_profanity
 
 
 # 세부 일정 Serializer
@@ -102,3 +103,14 @@ class ScheduleSerializer(serializers.ModelSerializer):
                 rule.weekdays.set(weekdays)
 
         return instance
+
+
+class SignupSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    name = serializers.CharField(max_length=20)
+    password = serializers.CharField(write_only=True)
+
+    def validate_name(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
