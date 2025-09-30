@@ -2,7 +2,7 @@ from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
-from utils.dummy_serializer import DummySerializer
+from apps.core.dummy_serializer import DummySerializer
 from .models import Bookmark, Like, Report
 from apps.schedule.models import Schedule
 from rest_framework.exceptions import NotFound

@@ -2,7 +2,7 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from utils.dummy_serializer import DummySerializer
+from apps.core.dummy_serializer import DummySerializer
 from .models import Notification
 from .serializers import NotificationSerializer
 
