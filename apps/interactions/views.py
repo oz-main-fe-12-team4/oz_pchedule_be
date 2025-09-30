@@ -1,6 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+
+from utils.dummy_serializer import DummySerializer
 from .models import Bookmark, Like, Report
 from apps.schedule.models import Schedule
 from rest_framework.exceptions import NotFound
@@ -9,6 +11,7 @@ from .serializers import ReportSerializer
 
 class ScheduleLikeAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = DummySerializer
 
     def post(self, request, schedule_id):
         schedule = Schedule.objects.filter(id=schedule_id).first()
@@ -52,6 +55,7 @@ class ScheduleLikeAPIView(generics.GenericAPIView):
 
 class ScheduleBookmarkAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = DummySerializer
 
     def post(self, request, schedule_id):
         try:
