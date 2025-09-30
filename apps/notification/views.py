@@ -1,6 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+
+from utils.dummy_serializer import DummySerializer
 from .models import Notification
 from .serializers import NotificationSerializer
 
@@ -20,6 +22,7 @@ class NotificationListAPIView(generics.GenericAPIView):
 
 class NotificationReadAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = DummySerializer
 
     def post(self, request, notification_id, *args, **kwargs):
         # 특정 알림 가져오기
@@ -34,6 +37,7 @@ class NotificationReadAPIView(generics.GenericAPIView):
 
 class NotificationDeleteAPIView(generics.GenericAPIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = DummySerializer
 
     def delete(self, request, notification_id, *args, **kwargs):
         # 특정 알림 가져오기
