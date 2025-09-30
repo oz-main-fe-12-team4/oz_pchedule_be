@@ -22,6 +22,7 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     LoginResponseSerializer,
 )
+from utils.dummy_serializer import DummySerializer
 
 
 # ---------------- 회원 관련 ---------------- #
@@ -241,6 +242,8 @@ class SocialLoginView(generics.GenericAPIView):
 
 
 class LogoutView(generics.GenericAPIView):
+    serializer_class = DummySerializer
+
     def post(self, request):
         refresh_token = request.COOKIES.get("refresh_token")  # ✅ .get() 안전하게
         if not refresh_token:
@@ -272,6 +275,7 @@ class LogoutView(generics.GenericAPIView):
 
 # ✅ 내 정보 조회
 class UserInfoView(generics.GenericAPIView):
+    serializer_class = UserInfoSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -338,6 +342,7 @@ class UserPasswordEditView(generics.GenericAPIView):
 
 # ✅ 회원 탈퇴
 class UserDeleteView(generics.GenericAPIView):
+    serializer_class = DummySerializer
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
@@ -352,6 +357,8 @@ class UserDeleteView(generics.GenericAPIView):
 
 # ✅ 토큰 재발급
 class TokenRefreshView(generics.GenericAPIView):
+    serializer_class = DummySerializer
+
     def post(self, request):
         refresh_token = request.data.get("refresh_token")
         if not refresh_token:
@@ -369,6 +376,7 @@ class TokenRefreshView(generics.GenericAPIView):
 
 
 class UserListView(generics.GenericAPIView):
+    serializer_class = UserAdminSerializer
     permission_classes = [IsCustomAdmin]
 
     def get(self, request):
@@ -400,6 +408,7 @@ class UserListView(generics.GenericAPIView):
 
 
 class UserActivateView(generics.GenericAPIView):
+    serializer_class = UserAdminSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
@@ -416,6 +425,7 @@ class UserActivateView(generics.GenericAPIView):
 
 
 class UserDeactivateView(generics.GenericAPIView):
+    serializer_class = UserAdminSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
