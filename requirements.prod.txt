@@ -15,6 +15,6 @@ python-dotenv==1.1.1     # 환경변수 관리
 pytz==2025.2             # 시간대 관리
 sqlparse==0.5.3          # Django에서 SQL 파싱용
 tzdata==2025.2           # 타임존 데이터 (리눅스 환경에서 필요)
-
+better-profanity==0.7.0  # 욕설 필터링
 PyJWT==2.10.1            # JWT 직접 쓸 경우
 requests==2.32.5         # 외부 API 호출시
