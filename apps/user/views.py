@@ -13,7 +13,6 @@ from .permissions import IsCustomAdmin
 from .serializers import (
     UserSerializer,
     UserInfoSerializer,
-    LoginAttemptSerializer,
     UserAdminSerializer,
     LoginRequestSerializer,
     ChangeNameSerializer,
@@ -80,15 +79,9 @@ class LoginView(generics.GenericAPIView):
     serializer_class = LoginRequestSerializer  # ✅ 요청 Body용 Serializer 지정
 
     @swagger_auto_schema(
-        request_body=LoginRequestSerializer,  # 요청 바디 스키마
-        responses={
-            200: LoginResponseSerializer,  # ✅ 응답 스키마를 시리얼라이저로 교체
-            400: "잘못된 요청 (이메일/비밀번호 누락)",
-            401: "이메일 또는 비밀번호가 올바르지 않음",
-            403: "정지된 계정",
-            429: "로그인 시도 제한 초과",
-        },
-        operation_description="사용자 로그인 (이메일 + 비밀번호, HttpOnly Cookie에 토큰 저장)",
+        request_body=LoginRequestSerializer,
+        responses={200: LoginResponseSerializer},
+        operation_description="사용자 로그인 (이메일 + 비밀번호, Access Token은 응답 Body, Refresh Token은 쿠키 저장)",
     )
     def post(self, request):
         # ✅ 요청 데이터 검증
@@ -98,7 +91,7 @@ class LoginView(generics.GenericAPIView):
         email = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
 
-        # 로그인 시도 제한 (5분 내 5회 실패 시 차단)
+        # 로그인 시도 제한
         attempts = LoginAttempt.objects.filter(
             ip_address=request.META.get("REMOTE_ADDR"),
             login_attempt_time__gte=timezone.now() - timezone.timedelta(minutes=5),
@@ -113,15 +106,11 @@ class LoginView(generics.GenericAPIView):
         # 사용자 인증
         user = authenticate(request, username=email, password=password)
         if user is None:
-            login_attempt_data = {
-                "user": None,
-                "is_success": False,
-                "ip_address": request.META.get("REMOTE_ADDR"),
-            }
-            attempt_serializer = LoginAttemptSerializer(data=login_attempt_data)
-            attempt_serializer.is_valid(raise_exception=True)
-            attempt_serializer.save()
-
+            LoginAttempt.objects.create(
+                user=None,
+                is_success=False,
+                ip_address=request.META.get("REMOTE_ADDR"),
+            )
             return Response(
                 {"error": "이메일이 존재하지 않거나 비밀번호가 틀렸습니다."},
                 status=status.HTTP_401_UNAUTHORIZED,
@@ -139,32 +128,22 @@ class LoginView(generics.GenericAPIView):
         refresh_token = str(refresh)
 
         # 성공한 로그인 기록
-        login_attempt_data = {
-            "user": user.id,
-            "is_success": True,
-            "ip_address": request.META.get("REMOTE_ADDR"),
-        }
-        success_serializer = LoginAttemptSerializer(data=login_attempt_data)
-        success_serializer.is_valid(raise_exception=True)
-        success_serializer.save()
-
-        # ✅ 응답 데이터 (시리얼라이저 활용)
-        response_data = {"message": "로그인이 완료되었습니다.", "is_admin": user.is_admin}
-        response_serializer = LoginResponseSerializer(response_data)
-
-        response = Response(response_serializer.data, status=status.HTTP_200_OK)
-
-        # Access Token 쿠키 저장
-        response.set_cookie(
-            key="access_token",
-            value=access_token,
-            httponly=True,
-            secure=True,
-            samesite="Lax",
-            max_age=60 * 60,
+        LoginAttempt.objects.create(
+            user=user,
+            is_success=True,
+            ip_address=request.META.get("REMOTE_ADDR"),
         )
 
-        # Refresh Token 쿠키 저장 (추가 권장)
+        # ✅ 응답 데이터 (AccessToken 포함)
+        response_data = {
+            "message": "로그인이 완료되었습니다.",
+            "access_token": access_token,  # 👈 Body에 포함
+            "is_admin": user.is_admin,
+        }
+
+        response = Response(response_data, status=status.HTTP_200_OK)
+
+        # Refresh Token만 쿠키 저장 (AccessToken은 Body로만 내려줌)
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
@@ -261,7 +240,6 @@ class LogoutView(generics.GenericAPIView):
                 status=status.HTTP_200_OK,
             )
             # ✅ 쿠키 삭제
-            response.delete_cookie("access_token")
             response.delete_cookie("refresh_token")
             response.delete_cookie("csrftoken")
             return response

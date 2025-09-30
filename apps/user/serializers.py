@@ -29,6 +29,7 @@ class LoginRequestSerializer(serializers.Serializer):
 # 로그인 응답
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
+    access_token = serializers.CharField()
     is_admin = serializers.BooleanField()
 
 
