@@ -21,7 +21,7 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     LoginResponseSerializer,
 )
-from utils.dummy_serializer import DummySerializer
+from apps.core.dummy_serializer import DummySerializer
 
 
 # ---------------- 회원 관련 ---------------- #
@@ -104,7 +104,7 @@ class LoginView(generics.GenericAPIView):
             )
 
         # 사용자 인증
-        user = authenticate(request, username=email, password=password)
+        user = authenticate(request, email=email, password=password)
         if user is None:
             LoginAttempt.objects.create(
                 user=None,
