@@ -12,7 +12,7 @@ class ScheduleListAPIView(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
+        if user.is_admin:
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 
@@ -41,7 +41,7 @@ class ScheduleDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
+        if user.is_admin:
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 

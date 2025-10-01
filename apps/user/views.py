@@ -224,17 +224,14 @@ class LogoutView(generics.GenericAPIView):
     serializer_class = DummySerializer
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token")  # ✅ .get() 안전하게
-        if not refresh_token:
-            return Response(
-                {"error": "refresh_token이 필요합니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        refresh_token = request.COOKIES.get("refresh_token")
 
         try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()  # ✅ refresh_token 블랙리스트에 등록
+            if refresh_token:  # 토큰이 있으면 블랙리스트 처리
+                token = RefreshToken(refresh_token)
+                token.blacklist()
 
+            # ✅ 토큰이 있든 없든, 최종적으로 200 응답
             response = Response(
                 {"message": "로그아웃이 완료되었습니다."},
                 status=status.HTTP_200_OK,
@@ -245,10 +242,14 @@ class LogoutView(generics.GenericAPIView):
             return response
 
         except Exception:
-            return Response(
-                {"error": "토큰 인증에 실패했습니다."},
-                status=status.HTTP_401_UNAUTHORIZED,
+            # 블랙리스트 실패해도 이미 쿠키 삭제했으니까 그냥 성공으로 처리
+            response = Response(
+                {"message": "로그아웃이 완료되었습니다."},
+                status=status.HTTP_200_OK,
             )
+            response.delete_cookie("refresh_token")
+            response.delete_cookie("csrftoken")
+            return response
 
 
 # ✅ 내 정보 조회
