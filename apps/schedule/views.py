@@ -1,7 +1,8 @@
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Schedule
+from rest_framework.views import APIView
+from .models import Schedule, DetailSchedule
 from .serializers import ScheduleSerializer
 
 
@@ -45,8 +46,18 @@ class ScheduleDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 
-    # DELETE 요청
     def delete(self, request, *args, **kwargs):
         schedule = self.get_object()
         schedule.delete()
         return Response({"data": {"message": "Schedule deleted"}}, status=status.HTTP_200_OK)
+
+
+# 개별 세부 일정 완료 토글
+class DetailScheduleCompleteAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk, *args, **kwargs):
+        detail = DetailSchedule.objects.get(pk=pk)
+        detail.is_completed = not detail.is_completed
+        detail.save()
+        return Response({"data": {"is_completed": detail.is_completed}}, status=status.HTTP_200_OK)

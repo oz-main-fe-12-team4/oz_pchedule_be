@@ -28,7 +28,7 @@ class Category(models.Model):
         return self.name
 
 
-# 일정 테이블
+# 메인 일정 테이블
 class Schedule(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
@@ -38,7 +38,7 @@ class Schedule(models.Model):
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="중간")
     share_type = models.CharField(max_length=10, choices=SHARE_CHOICES, default="비공개")
     is_someday = models.BooleanField(default=False)
-    complete = models.BooleanField(default=False)
+    is_completed = models.BooleanField(default=False)  # 완료 여부
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -64,7 +64,7 @@ class Weekday(models.Model):
 
 # 반복 규칙 테이블
 class RecurrenceRule(models.Model):
-    FREQUENCY_CHOICES = [
+    RECURRENCE_TYPE_CHOICES = [
         ("DAILY", "Daily"),
         ("WEEKLY", "Weekly"),
         ("MONTHLY", "Monthly"),
@@ -72,9 +72,8 @@ class RecurrenceRule(models.Model):
     ]
 
     schedule = models.OneToOneField(Schedule, on_delete=models.CASCADE, related_name="recurrence_rule")
-    frequency = models.CharField(max_length=10, choices=FREQUENCY_CHOICES)
-    interval = models.PositiveIntegerField(default=1)
-    weekdays = models.ManyToManyField(Weekday, blank=True)
+    recurrence_type = models.CharField(max_length=10, choices=RECURRENCE_TYPE_CHOICES)  # 반복 타입
+    weekdays = models.ManyToManyField(Weekday, blank=True)  # 요일 선택
     month_of_year = models.PositiveIntegerField(null=True, blank=True)
     day_of_month = models.PositiveIntegerField(null=True, blank=True)
 
@@ -89,7 +88,7 @@ class DetailSchedule(models.Model):
     description = models.TextField(blank=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    is_completed = models.BooleanField(default=False)
+    is_completed = models.BooleanField(default=False)  # 개별 일정 완료 여부
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
