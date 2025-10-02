@@ -10,5 +10,5 @@ class ReportSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Report
-        fields = ["id", "reason", "created_at"]
+        fields = ["id", "reason", "created_at", "user"]
         read_only_fields = ["id", "created_at"]
