@@ -21,7 +21,7 @@ class ScheduleListCreateAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         # 생성 시 현재 사용자로 설정
-        serializer.save(user=self.request.use)
+        serializer.save(user=self.request.user)
 
 
 class ScheduleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):

@@ -228,31 +228,26 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token") or request.data.get("refresh_token")  # ✅ .get() 안전하게
-        if not refresh_token:
-            return Response(
-                {"error": "refresh_token이 필요합니다."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        refresh_token = request.COOKIES.get("refresh_token")
 
         try:
-            token = RefreshToken(refresh_token)
-            token.blacklist()  # ✅ refresh_token 블랙리스트에 등록
+            if refresh_token:
+                # ✅ 토큰이 있으면 블랙리스트 처리
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+        except Exception:
+            # 블랙리스트 실패해도 무시 (이미 쿠키 삭제 예정)
+            pass
 
-            response = Response(
-                {"message": "로그아웃이 완료되었습니다."},
-                status=status.HTTP_200_OK,
-            )
-            # ✅ 쿠키 삭제
-            response.delete_cookie("refresh_token")
+        # ✅ 토큰이 있든 없든 최종적으로 성공 응답
+        response = Response(
+            {"message": "로그아웃이 완료되었습니다."},
+            status=status.HTTP_200_OK,
+        )
+        # ✅ 쿠키 삭제 (refresh_token + csrftoken 같이 제거)
+        response.delete_cookie("refresh_token")
 
-            return response
-
-        except Exception as e:
-            return Response(
-                {"error": f"토큰 인증에 실패했습니다. {e}"},
-                status=status.HTTP_401_UNAUTHORIZED,
-            )
+        return response
 
 
 # ✅ 내 정보 조회
