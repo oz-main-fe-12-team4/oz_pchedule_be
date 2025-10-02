@@ -22,12 +22,19 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
-    path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-    path("user/", include("apps.user.urls")),
-    path("schedule/", include("apps.schedule.urls")),
-    path("schedule/<int:pk>/", include("apps.interactions.urls")),
-    path("notifications/", include("apps.notification.urls")),
-    path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path(
+        "api/",
+        include(
+            [
+                path("schema/", SpectacularAPIView.as_view(), name="schema"),
+                path("swagger/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+                path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
+                path("user/", include("apps.user.urls")),
+                path("schedule/", include("apps.schedule.urls")),
+                path("schedule/<int:pk>/", include("apps.interactions.urls")),
+                path("notifications/", include("apps.notification.urls")),
+                path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+            ]
+        ),
+    ),
 ]
