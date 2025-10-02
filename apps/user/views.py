@@ -4,12 +4,13 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, LoginAttempt
 from .permissions import IsCustomAdmin
+from django.middleware.csrf import get_token
 from .serializers import (
     UserSerializer,
     UserInfoSerializer,
@@ -25,7 +26,30 @@ from apps.core.dummy_serializer import DummySerializer
 
 
 # ---------------- 회원 관련 ---------------- #
-# 회원가입
+class GetCSRFTokenView(generics.GenericAPIView):
+    permission_classes = [AllowAny]  # 로그인 없이도 접근 가능
+
+    def get(self, request, *args, **kwargs):
+        """
+        CSRF 토큰 생성 후 브라우저 쿠키에 발급
+        """
+
+        # 토큰 생성
+        token = get_token(request)
+        # 쿠키에 안전하게 세팅
+        response = Response({"csrftoken": token})
+        response.set_cookie(
+            key="csrftoken",
+            value=token,
+            httponly=False,  # JS에서 읽어서 X-CSRFToken 헤더에 넣기 위해 False
+            secure=True,  # HTTP 환경 테스트용, HTTPS에서는 True
+            samesite="None",  # cross-origin POST 시에도 전송 가능
+            path="/",  # 쿠키 경로 통일
+            max_age=60 * 60 * 4,  # 4시간 유효
+        )
+        return response
+
+
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -149,7 +173,7 @@ class LoginView(generics.GenericAPIView):
             value=refresh_token,
             httponly=True,
             secure=True,
-            samesite=None,
+            samesite="None",
             max_age=60 * 60 * 24 * 7,
         )
 
@@ -240,8 +264,18 @@ class LogoutView(generics.GenericAPIView):
                 status=status.HTTP_200_OK,
             )
             # ✅ 쿠키 삭제
-            response.delete_cookie("refresh_token")
-            response.delete_cookie("csrftoken")
+            response.delete_cookie(
+                key="refresh_token",
+                path="/",
+                samesite="None",
+                secure=True,
+            )
+            response.delete_cookie(
+                key="csrftoken",
+                path="/",
+                samesite="None",
+                secure=True,
+            )
             return response
 
         except Exception:

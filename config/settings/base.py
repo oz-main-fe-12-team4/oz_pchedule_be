@@ -10,6 +10,7 @@ DJANGO_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
 ]
 
 PROJECT_APPS = [
@@ -25,7 +26,6 @@ THIRD_PARTY_APPS = [
     "drf_spectacular",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
-    "corsheaders",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + PROJECT_APPS + THIRD_PARTY_APPS
@@ -99,5 +99,3 @@ SIMPLE_JWT = {
 }
 
 AUTH_USER_MODEL = "user.User"
-
-CORS_ALLOW_CREDENTIALS = True
