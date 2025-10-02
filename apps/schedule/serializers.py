@@ -9,6 +9,13 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
         model = DetailSchedule
         fields = ["id", "title", "description", "start_time", "end_time", "is_completed"]
 
+    def validate(self, attrs):
+        start_time = attrs.get("start_time")
+        end_time = attrs.get("end_time")
+        if start_time and end_time and end_time < start_time:
+            raise serializers.ValidationError("세부 일정의 종료 시간은 시작 시간보다 이후여야 합니다.")
+        return attrs
+
     def validate_title(self, value):
         if contains_profanity(value):
             raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
@@ -22,7 +29,8 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
 
 # 반복 규칙 Serializer
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
-    weekdays = serializers.PrimaryKeyRelatedField(many=True, queryset=Weekday.objects.all())
+    WEEKDAYS_CHOICES = ["월", "화", "수", "목", "금", "토", "일"]
+    weekdays = serializers.ListField(child=serializers.ChoiceField(choices=WEEKDAYS_CHOICES), allow_empty=True)
     recurrence_type = serializers.ChoiceField(choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES)
 
     class Meta:
@@ -40,12 +48,30 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         return value
 
 
+# 요일 Serializer
+class WeekdaySerializer(serializers.ModelSerializer):
+    code = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Weekday
+        fields = ["id", "code", "name"]
+
+    # 요청 데이터 처리: name -> code 매핑
+    def to_internal_value(self, data):
+        if "name" in data and "code" not in data:
+            try:
+                weekday_obj = Weekday.objects.get(name=data["name"])
+                data["code"] = weekday_obj.code
+            except Weekday.DoesNotExist:
+                raise serializers.ValidationError({"name": f"'{data['name']}'는 올바른 요일이 아닙니다."})
+        return super().to_internal_value(data)
+
+
 # 메인 일정 Serializer
 class ScheduleSerializer(serializers.ModelSerializer):
     detail_schedule = DetailScheduleSerializer(many=True, required=False)
     recurrence_rule = RecurrenceRuleSerializer(required=False)
     category_name = serializers.CharField(source="category.name", read_only=True)
-
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
     share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
 
@@ -73,17 +99,14 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
         if not is_someday and (not start_period or not end_period):
             raise serializers.ValidationError("시작일과 종료일은 필수입니다 (is_someday=False)")
-
         if start_period and end_period and end_period < start_period:
             raise serializers.ValidationError("종료일은 시작일보다 이후여야 합니다.")
-
         return attrs
 
     def create(self, validated_data):
         details = validated_data.pop("detail_schedule", [])
         recurrence_data = validated_data.pop("recurrence_rule", None)
 
-        print(validated_data)
         schedule = Schedule.objects.create(**validated_data)
 
         for d in details:
