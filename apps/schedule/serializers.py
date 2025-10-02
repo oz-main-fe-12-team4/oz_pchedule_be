@@ -9,10 +9,22 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
         model = DetailSchedule
         fields = ["id", "title", "description", "start_time", "end_time", "is_completed"]
 
+    def validate(self, attrs):
+        start_time = attrs.get("start_time")
+        end_time = attrs.get("end_time")
+
+        if start_time and end_time and end_time < start_time:
+            raise serializers.ValidationError("세부 일정의 종료 시간은 시작 시간보다 이후여야 합니다.")
+
+        return attrs
+
 
 # 반복 규칙 Serializer
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
-    weekdays = serializers.PrimaryKeyRelatedField(many=True, queryset=Weekday.objects.all())
+    WEEKDAYS_CHOICES = ["월", "화", "수", "목", "금", "토", "일"]
+
+    weekdays = serializers.ListField(child=serializers.ChoiceField(choices=WEEKDAYS_CHOICES), allow_empty=True)
+
     recurrence_type = serializers.ChoiceField(choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES)
 
     class Meta:
@@ -28,6 +40,25 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         if value and (value < 1 or value > 31):
             raise serializers.ValidationError("일은 1~31 사이여야 합니다.")
         return value
+
+
+class WeekdaySerializer(serializers.ModelSerializer):
+    code = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Weekday
+        fields = ["id", "code", "name"]
+
+    # 요청 데이터 처리: name(예: "월")이 들어오면 code 찾아서 매핑
+    def to_internal_value(self, data):
+        if "name" in data and "code" not in data:
+            try:
+                weekday_obj = Weekday.objects.get(name=data["name"])
+                # 강제로 code도 같이 넣어줌
+                data["code"] = weekday_obj.code
+            except Weekday.DoesNotExist:
+                raise serializers.ValidationError({"name": f"'{data['name']}'는 올바른 요일이 아닙니다."})
+        return super().to_internal_value(data)
 
 
 # 메인 일정 Serializer

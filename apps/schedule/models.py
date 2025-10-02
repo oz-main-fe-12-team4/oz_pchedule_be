@@ -52,7 +52,17 @@ class Schedule(models.Model):
 
 # 요일 테이블
 class Weekday(models.Model):
-    code = models.CharField(max_length=2, unique=True)
+    WEEKDAY_CHOICES = [
+        ("MO", "월"),
+        ("TU", "화"),
+        ("WE", "수"),
+        ("TH", "목"),
+        ("FR", "금"),
+        ("SA", "토"),
+        ("SU", "일"),
+    ]
+
+    code = models.CharField(max_length=2, unique=True, choices=WEEKDAY_CHOICES)
     name = models.CharField(max_length=10)
 
     class Meta:
