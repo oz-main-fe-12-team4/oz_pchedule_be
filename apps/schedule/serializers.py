@@ -13,10 +13,11 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
 # 반복 규칙 Serializer
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
     weekdays = serializers.PrimaryKeyRelatedField(many=True, queryset=Weekday.objects.all())
+    recurrence_type = serializers.ChoiceField(choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES)
 
     class Meta:
         model = RecurrenceRule
-        fields = ["id", "frequency", "interval", "weekdays", "month_of_year", "day_of_month"]
+        fields = ["id", "recurrence_type", "weekdays", "month_of_year", "day_of_month"]
 
     def validate_month_of_year(self, value):
         if value and (value < 1 or value > 12):
@@ -29,11 +30,14 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         return value
 
 
-# 일정 Serializer
+# 메인 일정 Serializer
 class ScheduleSerializer(serializers.ModelSerializer):
     detail_schedule = DetailScheduleSerializer(many=True, required=False)
     recurrence_rule = RecurrenceRuleSerializer(required=False)
     category_name = serializers.CharField(source="category.name", read_only=True)
+
+    priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
+    share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
 
     class Meta:
         model = Schedule
@@ -47,7 +51,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "priority",
             "share_type",
             "is_someday",
-            "complete",
+            "is_completed",
             "detail_schedule",
             "recurrence_rule",
         ]
@@ -57,9 +61,12 @@ class ScheduleSerializer(serializers.ModelSerializer):
         start_period = attrs.get("start_period")
         end_period = attrs.get("end_period")
 
-        if not is_someday:
-            if not start_period or not end_period:
-                raise serializers.ValidationError("시작일과 종료일은 필수입니다 (is_someday=False)")
+        if not is_someday and (not start_period or not end_period):
+            raise serializers.ValidationError("시작일과 종료일은 필수입니다 (is_someday=False)")
+
+        if start_period and end_period and end_period < start_period:
+            raise serializers.ValidationError("종료일은 시작일보다 이후여야 합니다.")
+
         return attrs
 
     def create(self, validated_data):

@@ -21,7 +21,7 @@ class ScheduleListCreateAPIView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         # 생성 시 현재 사용자로 설정
-        serializer.save(user=self.request.user)
+        serializer.save(user=self.request.use)
 
 
 class ScheduleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
@@ -73,12 +73,6 @@ class DetailScheduleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyA
     http_method_names = ["get", "put", "delete"]  # PATCH 제거, PUT만 허용
 
     def get_queryset(self):
-        user = self.request.user
-        if getattr(user, "is_admin", False):
-            return Schedule.objects.all()
-        return Schedule.objects.filter(user=user)
-
-    def get_detail_queryset(self):  # 이름 바꿔줌!
         user = self.request.user
         return DetailSchedule.objects.filter(schedule__user=user)
 
