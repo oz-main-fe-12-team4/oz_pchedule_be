@@ -15,6 +15,9 @@ services:
     depends_on:
       - db
     restart: unless-stopped
+    networks:
+      - ws
+
 
   prod:
     build:
