@@ -1,108 +1,128 @@
-from django.db import models
-from apps.user.models import User
-
-# 우선순위 선택지
-PRIORITY_CHOICES = [
-    ("긴급", "긴급"),
-    ("높음", "높음"),
-    ("중간", "중간"),
-    ("낮음", "낮음"),
-    ("보류", "보류"),
-]
-
-# 공유 범위 선택지
-SHARE_CHOICES = [
-    ("비공개", "비공개"),
-    ("전체공개", "전체공개"),
-]
+from rest_framework import serializers
+from .models import Schedule, DetailSchedule, RecurrenceRule, Weekday
+from apps.core.profanity_filter import contains_profanity
 
 
-# 카테고리 테이블
-class Category(models.Model):
-    name = models.CharField(max_length=50, unique=True)
+# 세부 일정 Serializer
+class DetailScheduleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DetailSchedule
+        fields = ["id", "title", "description", "start_time", "end_time", "is_completed"]
+
+    def validate_title(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
+
+    def validate_description(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
+
+
+# 반복 규칙 Serializer
+class RecurrenceRuleSerializer(serializers.ModelSerializer):
+    weekdays = serializers.PrimaryKeyRelatedField(many=True, queryset=Weekday.objects.all())
+    recurrence_type = serializers.ChoiceField(choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES)
 
     class Meta:
-        db_table = "category"
+        model = RecurrenceRule
+        fields = ["id", "recurrence_type", "weekdays", "month_of_year", "day_of_month"]
 
-    def __str__(self):
-        return self.name
+    def validate_month_of_year(self, value):
+        if value and (value < 1 or value > 12):
+            raise serializers.ValidationError("월은 1~12 사이여야 합니다.")
+        return value
 
-
-# 메인 일정 테이블
-class Schedule(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    title = models.CharField(max_length=100)
-    start_period = models.DateTimeField(null=True, blank=True)
-    end_period = models.DateTimeField(null=True, blank=True)
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True)
-    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default="중간")
-    share_type = models.CharField(max_length=10, choices=SHARE_CHOICES, default="비공개")
-    is_someday = models.BooleanField(default=False)
-    is_completed = models.BooleanField(default=False)  # 완료 여부
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = "schedule"
-
-    def __str__(self):
-        return f"{self.title} ({self.user.username})"
+    def validate_day_of_month(self, value):
+        if value and (value < 1 or value > 31):
+            raise serializers.ValidationError("일은 1~31 사이여야 합니다.")
+        return value
 
 
-# 요일 테이블
-class Weekday(models.Model):
-    WEEKDAY_CHOICES = [
-        ("MO", "월"),
-        ("TU", "화"),
-        ("WE", "수"),
-        ("TH", "목"),
-        ("FR", "금"),
-        ("SA", "토"),
-        ("SU", "일"),
-    ]
+# 메인 일정 Serializer
+class ScheduleSerializer(serializers.ModelSerializer):
+    detail_schedule = DetailScheduleSerializer(many=True, required=False)
+    recurrence_rule = RecurrenceRuleSerializer(required=False)
+    category_name = serializers.CharField(source="category.name", read_only=True)
 
-    code = models.CharField(max_length=2, unique=True, choices=WEEKDAY_CHOICES)
-    name = models.CharField(max_length=10)
+    priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
+    share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
 
     class Meta:
-        db_table = "weekday"
+        model = Schedule
+        fields = [
+            "id",
+            "title",
+            "start_period",
+            "end_period",
+            "category",
+            "category_name",
+            "priority",
+            "share_type",
+            "is_someday",
+            "is_completed",
+            "detail_schedule",
+            "recurrence_rule",
+        ]
 
-    def __str__(self):
-        return self.name
+    def validate(self, attrs):
+        is_someday = attrs.get("is_someday", False)
+        start_period = attrs.get("start_period")
+        end_period = attrs.get("end_period")
 
+        if not is_someday and (not start_period or not end_period):
+            raise serializers.ValidationError("시작일과 종료일은 필수입니다 (is_someday=False)")
 
-# 반복 규칙 테이블
-class RecurrenceRule(models.Model):
-    RECURRENCE_TYPE_CHOICES = [
-        ("DAILY", "Daily"),
-        ("WEEKLY", "Weekly"),
-        ("MONTHLY", "Monthly"),
-        ("YEARLY", "Yearly"),
-    ]
+        if start_period and end_period and end_period < start_period:
+            raise serializers.ValidationError("종료일은 시작일보다 이후여야 합니다.")
 
-    schedule = models.OneToOneField(Schedule, on_delete=models.CASCADE, related_name="recurrence_rule")
-    recurrence_type = models.CharField(max_length=10, choices=RECURRENCE_TYPE_CHOICES)  # 반복 타입
-    weekdays = models.ManyToManyField(Weekday, blank=True)  # 요일 선택
-    month_of_year = models.PositiveIntegerField(null=True, blank=True)
-    day_of_month = models.PositiveIntegerField(null=True, blank=True)
+        return attrs
 
-    class Meta:
-        db_table = "recurrence_rule"
+    def create(self, validated_data):
+        details = validated_data.pop("detail_schedule", [])
+        recurrence_data = validated_data.pop("recurrence_rule", None)
 
+        print(validated_data)
+        schedule = Schedule.objects.create(**validated_data)
 
-# 세부 일정 테이블
-class DetailSchedule(models.Model):
-    schedule = models.ForeignKey(Schedule, on_delete=models.CASCADE, related_name="detail_schedule")
-    title = models.CharField(max_length=100)
-    description = models.TextField(blank=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    is_completed = models.BooleanField(default=False)  # 개별 일정 완료 여부
-    created_at = models.DateTimeField(auto_now_add=True)
+        for d in details:
+            DetailSchedule.objects.create(schedule=schedule, **d)
 
-    class Meta:
-        db_table = "detail_schedule"
+        if recurrence_data:
+            weekdays = recurrence_data.pop("weekdays", [])
+            rule = RecurrenceRule.objects.create(schedule=schedule, **recurrence_data)
+            rule.weekdays.set(weekdays)
 
-    def __str__(self):
-        return f"{self.title} - {self.schedule.title}"
+        return schedule
+
+    def update(self, instance, validated_data):
+        details = validated_data.pop("detail_schedule", None)
+        recurrence_data = validated_data.pop("recurrence_rule", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if details is not None:
+            instance.detail_schedule.all().delete()
+            for d in details:
+                DetailSchedule.objects.create(schedule=instance, **d)
+
+        if recurrence_data is not None:
+            weekdays = recurrence_data.pop("weekdays", [])
+            if hasattr(instance, "recurrence_rule"):
+                for attr, value in recurrence_data.items():
+                    setattr(instance.recurrence_rule, attr, value)
+                instance.recurrence_rule.save()
+                instance.recurrence_rule.weekdays.set(weekdays)
+            else:
+                rule = RecurrenceRule.objects.create(schedule=instance, **recurrence_data)
+                rule.weekdays.set(weekdays)
+
+        return instance
+
+    def validate_title(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
