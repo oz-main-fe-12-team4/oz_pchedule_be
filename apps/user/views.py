@@ -10,7 +10,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, LoginAttempt
 from .permissions import IsCustomAdmin
-from django.middleware.csrf import get_token
+
+# from django.middleware.csrf import get_token
 from .serializers import (
     UserSerializer,
     UserInfoSerializer,
@@ -26,28 +27,24 @@ from apps.core.dummy_serializer import DummySerializer
 
 
 # ---------------- 회원 관련 ---------------- #
-class GetCSRFTokenView(generics.GenericAPIView):
-    permission_classes = [AllowAny]  # 로그인 없이도 접근 가능
-
-    def get(self, request, *args, **kwargs):
-        """
-        CSRF 토큰 생성 후 브라우저 쿠키에 발급
-        """
-
-        # 토큰 생성
-        token = get_token(request)
-        # 쿠키에 안전하게 세팅
-        response = Response({"csrftoken": token})
-        response.set_cookie(
-            key="csrftoken",
-            value=token,
-            httponly=False,  # JS에서 읽어서 X-CSRFToken 헤더에 넣기 위해 False
-            secure=True,  # HTTP 환경 테스트용, HTTPS에서는 True
-            samesite="None",  # cross-origin POST 시에도 전송 가능
-            path="/",  # 쿠키 경로 통일
-            max_age=60 * 60 * 4,  # 4시간 유효
-        )
-        return response
+# class GetCSRFTokenView(APIView):
+#    permission_classes = [AllowAny]
+#    authentication_classes = []
+#
+#    def get(self, request, *args, **kwargs):
+#        token = get_token(request)
+#        response = Response({"csrftoken": token})
+#        response.set_cookie(
+#            key="csrftoken",
+#            value=token,
+#            httponly=False,
+#            secure=True,
+#            samesite="None",
+#            path="/",
+#            max_age=60*60*4,
+#            domain="pchedule.kro.kr"
+#        )
+#        return response
 
 
 class SignupView(generics.CreateAPIView):
@@ -101,6 +98,8 @@ class SignupView(generics.CreateAPIView):
 
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginRequestSerializer  # ✅ 요청 Body용 Serializer 지정
+    permission_classes = [AllowAny]
+    authentication_claases = []
 
     @swagger_auto_schema(
         request_body=LoginRequestSerializer,
@@ -246,9 +245,10 @@ class SocialLoginView(generics.GenericAPIView):
 
 class LogoutView(generics.GenericAPIView):
     serializer_class = DummySerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token")  # ✅ .get() 안전하게
+        refresh_token = request.COOKIES.get("refresh_token") or request.data.get("refresh_token")  # ✅ .get() 안전하게
         if not refresh_token:
             return Response(
                 {"error": "refresh_token이 필요합니다."},
@@ -264,23 +264,15 @@ class LogoutView(generics.GenericAPIView):
                 status=status.HTTP_200_OK,
             )
             # ✅ 쿠키 삭제
-            response.delete_cookie(
-                key="refresh_token",
-                path="/",
-                samesite="None",
-                secure=True,
-            )
-            response.delete_cookie(
-                key="csrftoken",
-                path="/",
-                samesite="None",
-                secure=True,
-            )
+            response.delete_cookie("refresh_token")
+            #            response.delete_cookie(
+            #                    key="csrftoken",
+            #                    )
             return response
 
-        except Exception:
+        except Exception as e:
             return Response(
-                {"error": "토큰 인증에 실패했습니다."},
+                {"error": f"토큰 인증에 실패했습니다. {e}"},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
