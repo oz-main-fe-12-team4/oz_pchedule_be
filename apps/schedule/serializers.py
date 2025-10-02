@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Schedule, DetailSchedule, RecurrenceRule, Weekday
-from .profanity_filter import contains_profanity
+from apps.core.profanity_filter import contains_profanity
 
 
 # 세부 일정 Serializer
@@ -9,22 +9,20 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
         model = DetailSchedule
         fields = ["id", "title", "description", "start_time", "end_time", "is_completed"]
 
-    def validate(self, attrs):
-        start_time = attrs.get("start_time")
-        end_time = attrs.get("end_time")
+    def validate_title(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
 
-        if start_time and end_time and end_time < start_time:
-            raise serializers.ValidationError("세부 일정의 종료 시간은 시작 시간보다 이후여야 합니다.")
-
-        return attrs
+    def validate_description(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
 
 
 # 반복 규칙 Serializer
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
-    WEEKDAYS_CHOICES = ["월", "화", "수", "목", "금", "토", "일"]
-
-    weekdays = serializers.ListField(child=serializers.ChoiceField(choices=WEEKDAYS_CHOICES), allow_empty=True)
-
+    weekdays = serializers.PrimaryKeyRelatedField(many=True, queryset=Weekday.objects.all())
     recurrence_type = serializers.ChoiceField(choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES)
 
     class Meta:
@@ -40,25 +38,6 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         if value and (value < 1 or value > 31):
             raise serializers.ValidationError("일은 1~31 사이여야 합니다.")
         return value
-
-
-class WeekdaySerializer(serializers.ModelSerializer):
-    code = serializers.CharField(read_only=True)
-
-    class Meta:
-        model = Weekday
-        fields = ["id", "code", "name"]
-
-    # 요청 데이터 처리: name(예: "월")이 들어오면 code 찾아서 매핑
-    def to_internal_value(self, data):
-        if "name" in data and "code" not in data:
-            try:
-                weekday_obj = Weekday.objects.get(name=data["name"])
-                # 강제로 code도 같이 넣어줌
-                data["code"] = weekday_obj.code
-            except Weekday.DoesNotExist:
-                raise serializers.ValidationError({"name": f"'{data['name']}'는 올바른 요일이 아닙니다."})
-        return super().to_internal_value(data)
 
 
 # 메인 일정 Serializer
@@ -104,6 +83,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
         details = validated_data.pop("detail_schedule", [])
         recurrence_data = validated_data.pop("recurrence_rule", None)
 
+        print(validated_data)
         schedule = Schedule.objects.create(**validated_data)
 
         for d in details:
@@ -142,13 +122,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
         return instance
 
-
-class SignupSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    name = serializers.CharField(max_length=20)
-    password = serializers.CharField(write_only=True)
-
-    def validate_name(self, value):
+    def validate_title(self, value):
         if contains_profanity(value):
             raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
         return value
