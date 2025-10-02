@@ -245,9 +245,7 @@ class LogoutView(generics.GenericAPIView):
             )
             # ✅ 쿠키 삭제
             response.delete_cookie("refresh_token")
-            #            response.delete_cookie(
-            #                    key="csrftoken",
-            #                    )
+
             return response
 
         except Exception as e:
