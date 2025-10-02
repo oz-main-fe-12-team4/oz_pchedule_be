@@ -3,15 +3,12 @@ from .models import Report
 
 
 class ReportSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(read_only=True)
+    # 👇 request.user 자동으로 채워줌
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
     reason = serializers.ChoiceField(choices=Report.REASONS)
-    created_at = serializers.DateTimeField(read_only=True)
 
     class Meta:
         model = Report
-        fields = ["id", "reason", "created_at"]
-
-    def create(self, validated_data):
-        user = self.context["request"].user
-        schedule = self.context["schedule"]
-        return Report.objects.create(user=user, schedule=schedule, **validated_data)
+        fields = ["id", "reason", "created_at", "user", "schedule"]
+        read_only_fields = ["id", "created_at"]

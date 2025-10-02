@@ -15,13 +15,13 @@ class ScheduleListCreateAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
+        if user.is_admin:
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 
     def perform_create(self, serializer):
         # 생성 시 현재 사용자로 설정
-        serializer.save(user=self.request.user)
+        serializer.save(user=self.request.use)
 
 
 class ScheduleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):

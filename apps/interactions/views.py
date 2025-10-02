@@ -97,13 +97,10 @@ class ScheduleReportAPIView(generics.GenericAPIView):
                 )
 
             serializer = self.get_serializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(
-                    {"error": "잘못된 형식의 요청입니다."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+            serializer.is_valid(raise_exception=True)
 
-            serializer.save(user=request.user, schedule=schedule)
+            # ✅ user는 ReportSerializer가 알아서 채움
+            serializer.save(schedule=schedule)
 
             return Response(
                 {"message": "신고가 접수되었습니다."},

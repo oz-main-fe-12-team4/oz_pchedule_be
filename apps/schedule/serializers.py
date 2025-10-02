@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import Schedule, DetailSchedule, RecurrenceRule, Weekday
-from .profanity_filter import contains_profanity
+from apps.core.profanity_filter import contains_profanity
 
 
 # 세부 일정 Serializer
@@ -73,6 +73,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
         details = validated_data.pop("detail_schedule", [])
         recurrence_data = validated_data.pop("recurrence_rule", None)
 
+        print(validated_data)
         schedule = Schedule.objects.create(**validated_data)
 
         for d in details:
@@ -111,13 +112,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
         return instance
 
-
-class SignupSerializer(serializers.Serializer):
-    email = serializers.EmailField()
-    name = serializers.CharField(max_length=20)
-    password = serializers.CharField(write_only=True)
-
-    def validate_name(self, value):
+    def validate_title(self, value):
         if contains_profanity(value):
             raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
         return value

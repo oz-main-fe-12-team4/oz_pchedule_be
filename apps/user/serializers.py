@@ -3,6 +3,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from .models import User, LoginAttempt
 
 from apps.interactions.models import Report, Like, Bookmark
+from ..core.profanity_filter import contains_profanity
 
 
 # 회원가입 / 유저 생성
@@ -18,6 +19,11 @@ class UserSerializer(serializers.ModelSerializer):
             "password",
             "name",
         ]
+
+    def validate_name(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
 
 
 # 로그인 요청
