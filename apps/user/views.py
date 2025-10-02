@@ -4,12 +4,14 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from rest_framework import generics, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import User, LoginAttempt
 from .permissions import IsCustomAdmin
+
+# from django.middleware.csrf import get_token
 from .serializers import (
     UserSerializer,
     UserInfoSerializer,
@@ -25,7 +27,6 @@ from apps.core.dummy_serializer import DummySerializer
 
 
 # ---------------- 회원 관련 ---------------- #
-# 회원가입
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
@@ -77,6 +78,8 @@ class SignupView(generics.CreateAPIView):
 
 class LoginView(generics.GenericAPIView):
     serializer_class = LoginRequestSerializer  # ✅ 요청 Body용 Serializer 지정
+    permission_classes = [AllowAny]
+    authentication_claases = []
 
     @swagger_auto_schema(
         request_body=LoginRequestSerializer,
@@ -149,7 +152,7 @@ class LoginView(generics.GenericAPIView):
             value=refresh_token,
             httponly=True,
             secure=True,
-            samesite=None,
+            samesite="None",
             max_age=60 * 60 * 24 * 7,
         )
 
@@ -222,34 +225,34 @@ class SocialLoginView(generics.GenericAPIView):
 
 class LogoutView(generics.GenericAPIView):
     serializer_class = DummySerializer
+    permission_classes = [AllowAny]
 
     def post(self, request):
-        refresh_token = request.COOKIES.get("refresh_token")
+        refresh_token = request.COOKIES.get("refresh_token") or request.data.get("refresh_token")  # ✅ .get() 안전하게
+        if not refresh_token:
+            return Response(
+                {"error": "refresh_token이 필요합니다."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
-            if refresh_token:  # 토큰이 있으면 블랙리스트 처리
-                token = RefreshToken(refresh_token)
-                token.blacklist()
+            token = RefreshToken(refresh_token)
+            token.blacklist()  # ✅ refresh_token 블랙리스트에 등록
 
-            # ✅ 토큰이 있든 없든, 최종적으로 200 응답
             response = Response(
                 {"message": "로그아웃이 완료되었습니다."},
                 status=status.HTTP_200_OK,
             )
             # ✅ 쿠키 삭제
             response.delete_cookie("refresh_token")
-            response.delete_cookie("csrftoken")
+
             return response
 
-        except Exception:
-            # 블랙리스트 실패해도 이미 쿠키 삭제했으니까 그냥 성공으로 처리
-            response = Response(
-                {"message": "로그아웃이 완료되었습니다."},
-                status=status.HTTP_200_OK,
+        except Exception as e:
+            return Response(
+                {"error": f"토큰 인증에 실패했습니다. {e}"},
+                status=status.HTTP_401_UNAUTHORIZED,
             )
-            response.delete_cookie("refresh_token")
-            response.delete_cookie("csrftoken")
-            return response
 
 
 # ✅ 내 정보 조회
