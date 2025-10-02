@@ -27,26 +27,6 @@ from apps.core.dummy_serializer import DummySerializer
 
 
 # ---------------- 회원 관련 ---------------- #
-# class GetCSRFTokenView(APIView):
-#    permission_classes = [AllowAny]
-#    authentication_classes = []
-#
-#    def get(self, request, *args, **kwargs):
-#        token = get_token(request)
-#        response = Response({"csrftoken": token})
-#        response.set_cookie(
-#            key="csrftoken",
-#            value=token,
-#            httponly=False,
-#            secure=True,
-#            samesite="None",
-#            path="/",
-#            max_age=60*60*4,
-#            domain="pchedule.kro.kr"
-#        )
-#        return response
-
-
 class SignupView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer

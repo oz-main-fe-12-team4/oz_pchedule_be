@@ -43,5 +43,3 @@ CSRF_COOKIE_HTTPONLY = True  # JS에서 읽어서 X-CSRFToken 헤더에 넣기 �
 
 # 세션 쿠키도 동일 정책
 SESSION_COOKIE_SECURE = True
-# SESSION_COOKIE_SAMESITE = "None"
-# SESSION_COOKIE_HTTPONLY = True       # 세션 쿠키는 JS 접근 불가(보안상 안전)
