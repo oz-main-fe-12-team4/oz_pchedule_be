@@ -9,6 +9,16 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
         model = DetailSchedule
         fields = ["id", "title", "description", "start_time", "end_time", "is_completed"]
 
+    def validate_title(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
+
+    def validate_description(self, value):
+        if contains_profanity(value):
+            raise serializers.ValidationError("부적절한 단어가 포함되어 있습니다.")
+        return value
+
 
 # 반복 규칙 Serializer
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
