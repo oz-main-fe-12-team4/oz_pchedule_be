@@ -29,23 +29,63 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
 
 # 반복 규칙 Serializer
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
-    WEEKDAYS_CHOICES = ["월", "화", "수", "목", "금", "토", "일"]
-    weekdays = serializers.ListField(child=serializers.ChoiceField(choices=WEEKDAYS_CHOICES), allow_empty=True)
+    # 사용자에게 보여줄 한글 선택지
+    WEEKDAYS_CHOICES = [
+        ("MO", "월"),
+        ("TU", "화"),
+        ("WE", "수"),
+        ("TH", "목"),
+        ("FR", "금"),
+        ("SA", "토"),
+        ("SU", "일"),
+    ]
+
+    # 사용자 입력: ["월", "화"] 형태
+    weekdays = serializers.ListField(
+        child=serializers.ChoiceField(choices=[name for code, name in WEEKDAYS_CHOICES]), allow_empty=True
+    )
+
     recurrence_type = serializers.ChoiceField(choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES)
 
     class Meta:
         model = RecurrenceRule
         fields = ["id", "recurrence_type", "weekdays", "month_of_year", "day_of_month"]
 
+    # month_of_year 유효성 검사
     def validate_month_of_year(self, value):
         if value and (value < 1 or value > 12):
             raise serializers.ValidationError("월은 1~12 사이여야 합니다.")
         return value
 
+    # day_of_month 유효성 검사
     def validate_day_of_month(self, value):
         if value and (value < 1 or value > 31):
             raise serializers.ValidationError("일은 1~31 사이여야 합니다.")
         return value
+
+    # DB 저장 시 Weekday 객체로 변환
+    def create(self, validated_data):
+        weekdays_input = validated_data.pop("weekdays", [])
+        code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
+        weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
+        rule = RecurrenceRule.objects.create(**validated_data)
+        rule.weekdays.set(weekdays_objs)
+        return rule
+
+    # DB 업데이트 시 Weekday 객체로 변환
+    def update(self, instance, validated_data):
+        weekdays_input = validated_data.pop("weekdays", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if weekdays_input is not None:
+            code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
+            weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
+            instance.weekdays.set(weekdays_objs)
+
+        return instance
 
 
 # 요일 Serializer
