@@ -65,7 +65,6 @@ class Migration(migrations.Migration):
                 ),
                 ("is_someday", models.BooleanField(default=False)),
                 ("is_recurrence", models.BooleanField(default=False)),
-                ("is_completed", models.BooleanField(default=False)),
                 ("is_reported", models.BooleanField(default=False)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
                 ("updated_at", models.DateTimeField(auto_now=True)),
