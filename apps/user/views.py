@@ -337,7 +337,7 @@ class TokenRefreshView(generics.GenericAPIView):
     serializer_class = DummySerializer
 
     def post(self, request):
-        refresh_token = request.data.get("refresh_token")
+        refresh_token = request.COOKIES.get("refresh_token")
         if not refresh_token:
             return Response({"error": "잘못된 형식의 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
