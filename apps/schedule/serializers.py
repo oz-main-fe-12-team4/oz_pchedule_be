@@ -45,7 +45,9 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         child=serializers.ChoiceField(choices=[name for code, name in WEEKDAYS_CHOICES]), allow_empty=True
     )
 
-    recurrence_type = serializers.ChoiceField(choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES)
+    recurrence_type = serializers.ChoiceField(
+        choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES, allow_null=True, required=False
+    )
 
     class Meta:
         model = RecurrenceRule
