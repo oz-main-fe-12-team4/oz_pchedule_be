@@ -39,7 +39,6 @@ class Schedule(models.Model):
     share_type = models.CharField(max_length=10, choices=SHARE_CHOICES, default="비공개")
     is_someday = models.BooleanField(default=False)
     is_recurrence = models.BooleanField(default=False)  # 반복 여부
-    is_completed = models.BooleanField(default=False)  # 완료 여부
     is_reported = models.BooleanField(default=False)  # 신고 여부
 
     created_at = models.DateTimeField(auto_now_add=True)
