@@ -128,7 +128,6 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "share_type",
             "is_someday",
             "is_recurrence",
-            "is_completed",
             "is_reported",
             "detail_schedule",
             "recurrence_rule",
