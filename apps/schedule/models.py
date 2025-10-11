@@ -74,7 +74,7 @@ class RecurrenceRule(models.Model):
     ]
 
     schedule = models.OneToOneField(Schedule, on_delete=models.CASCADE, related_name="recurrence_rule")
-    recurrence_type = models.CharField(max_length=10, choices=RECURRENCE_TYPE_CHOICES)  # 반복 타입
+    recurrence_type = models.CharField(max_length=10, choices=RECURRENCE_TYPE_CHOICES, blank=True)  # 반복 타입
     weekdays = models.ManyToManyField(Weekday, blank=True)  # 요일 선택
     month_of_year = models.PositiveIntegerField(null=True, blank=True)
     day_of_month = models.PositiveIntegerField(null=True, blank=True)
