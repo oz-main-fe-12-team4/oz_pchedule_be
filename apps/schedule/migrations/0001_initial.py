@@ -96,6 +96,7 @@ class Migration(migrations.Migration):
                             ("YEARLY", "Yearly"),
                         ],
                         max_length=10,
+                        blank=True,
                     ),
                 ),
                 ("month_of_year", models.PositiveIntegerField(blank=True, null=True)),
