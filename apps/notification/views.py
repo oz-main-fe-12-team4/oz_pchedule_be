@@ -13,9 +13,7 @@ class NotificationListAPIView(generics.GenericAPIView):
 
     def get(self, request, *args, **kwargs):
         # 로그인한 유저의 알림만 가져오기, 읽지 않은 알림 우선, 그다음 최신순
-        notifications = Notification.objects.filter(user=request.user, is_deleted=False).order_by(
-            "is_read", "-created_at"
-        )
+        notifications = Notification.objects.filter(user=request.user).order_by("is_read", "-created_at")
         serializer = self.get_serializer(notifications, many=True)
         return Response({"data": serializer.data})
 
@@ -26,7 +24,7 @@ class NotificationReadAPIView(generics.GenericAPIView):
 
     def post(self, request, notification_id, *args, **kwargs):
         # 특정 알림 가져오기
-        notification = generics.get_object_or_404(Notification, id=notification_id, user=request.user, is_deleted=False)
+        notification = generics.get_object_or_404(Notification, id=notification_id, user=request.user)
 
         # 읽음 처리
         notification.is_read = True
@@ -41,7 +39,7 @@ class NotificationDeleteAPIView(generics.GenericAPIView):
 
     def delete(self, request, notification_id, *args, **kwargs):
         # 특정 알림 가져오기
-        notification = generics.get_object_or_404(Notification, id=notification_id, user=request.user, is_deleted=False)
+        notification = generics.get_object_or_404(Notification, id=notification_id, user=request.user)
 
         # 삭제 처리 (is_deleted 필드 업데이트)
         notification.is_deleted = True
