@@ -61,6 +61,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "priority",
             "share_type",
             "is_someday",
+            "is_recurrence",
             "is_completed",
             "detail_schedule",
             "recurrence_rule",
@@ -74,7 +75,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
         if not is_someday and (not start_period or not end_period):
             raise serializers.ValidationError("시작일과 종료일은 필수입니다 (is_someday=False)")
 
-        if start_period and end_period and end_period < start_period:
+        if start_period and end_period and end_period <= start_period:
             raise serializers.ValidationError("종료일은 시작일보다 이후여야 합니다.")
 
         return attrs
