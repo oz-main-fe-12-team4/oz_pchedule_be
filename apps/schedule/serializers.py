@@ -43,13 +43,13 @@ class WeekdaySerializer(serializers.ModelSerializer):
 # ----------------------
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
     WEEKDAYS_CHOICES = [
+        ("일", "일"),
         ("월", "월"),
         ("화", "화"),
         ("수", "수"),
         ("목", "목"),
         ("금", "금"),
         ("토", "토"),
-        ("일", "일"),
     ]
 
     # GET: Weekday 객체
