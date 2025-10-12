@@ -31,13 +31,13 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
     # 사용자에게 보여줄 한글 선택지
     WEEKDAYS_CHOICES = [
-        ("MO", "월"),
-        ("TU", "화"),
-        ("WE", "수"),
-        ("TH", "목"),
-        ("FR", "금"),
-        ("SA", "토"),
-        ("SU", "일"),
+        ("월", "월"),
+        ("화", "화"),
+        ("수", "수"),
+        ("목", "목"),
+        ("금", "금"),
+        ("토", "토"),
+        ("일", "일"),
     ]
 
     # 사용자 입력: ["월", "화"] 형태
@@ -71,10 +71,14 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
     # DB 저장 시 Weekday 객체로 변환
     def create(self, validated_data):
         weekdays_input = validated_data.pop("weekdays", [])
-        code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
-        weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
         rule = RecurrenceRule.objects.create(**validated_data)
-        rule.weekdays.set(weekdays_objs)
+
+        if weekdays_input:
+            code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
+            valid_codes = [code_map[w] for w in weekdays_input if w in code_map]
+            weekdays_objs = Weekday.objects.filter(code__in=valid_codes)
+            rule.weekdays.set(weekdays_objs)
+
         return rule
 
     # DB 업데이트 시 Weekday 객체로 변환
@@ -87,7 +91,8 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
 
         if weekdays_input is not None:
             code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
-            weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
+            valid_codes = [code_map[w] for w in weekdays_input if w in code_map]
+            weekdays_objs = Weekday.objects.filter(code__in=valid_codes)
             instance.weekdays.set(weekdays_objs)
 
         return instance
@@ -119,6 +124,16 @@ class ScheduleSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
     share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
+
+    WEEKDAYS_CHOICES = [
+        ("월", "월"),
+        ("화", "화"),
+        ("수", "수"),
+        ("목", "목"),
+        ("금", "금"),
+        ("토", "토"),
+        ("일", "일"),
+    ]
 
     class Meta:
         model = Schedule
