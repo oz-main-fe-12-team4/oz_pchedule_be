@@ -8,12 +8,12 @@ def forwards_func(apps, schema_editor):
     db_alias = schema_editor.connection.alias
 
     categories = [
-        {"name": "일상", "code": "daily"},  # 🏠
-        {"name": "취미/여가", "code": "hobby"},  # 🎨
-        {"name": "여행", "code": "travel"},  # ✈️
-        {"name": "자기계발/학습", "code": "learning"},  # 📚
-        {"name": "특별이벤트", "code": "event"},  # 🎉
-        {"name": "기타", "code": "other"},  # 🌀
+        {"name": "일상", "code": "daily"},
+        {"name": "취미/여가", "code": "hobby"},
+        {"name": "여행", "code": "travel"},
+        {"name": "자기계발/학습", "code": "learning"},
+        {"name": "특별이벤트", "code": "event"},
+        {"name": "기타", "code": "other"},
     ]
 
     Category.objects.using(db_alias).bulk_create(
