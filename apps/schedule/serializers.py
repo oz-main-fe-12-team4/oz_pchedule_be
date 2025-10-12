@@ -46,6 +46,7 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         required=False,
         allow_empty=True,
         default=list,  # 빈 리스트일 경우 기본값
+        source="weekdays.all",
     )
 
     recurrence_type = serializers.ChoiceField(
@@ -119,8 +120,8 @@ class WeekdaySerializer(serializers.ModelSerializer):
 
 # 메인 일정 Serializer
 class ScheduleSerializer(serializers.ModelSerializer):
-    detail_schedule = DetailScheduleSerializer(many=True, required=False)
-    recurrence_rule = RecurrenceRuleSerializer(required=False, allow_null=True)
+    detail_schedule = DetailScheduleSerializer(many=True, required=False, source="detail_schedule.all")
+    recurrence_rule = RecurrenceRuleSerializer(required=False, allow_null=True, source="recurrence_rule")
     category_name = serializers.CharField(source="category.name", read_only=True)
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
     share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
