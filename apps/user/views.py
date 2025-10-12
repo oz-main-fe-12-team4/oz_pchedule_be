@@ -385,7 +385,6 @@ class UserListView(generics.GenericAPIView):
 
 
 class UserActivateView(generics.GenericAPIView):
-    serializer_class = UserAdminSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
@@ -402,7 +401,6 @@ class UserActivateView(generics.GenericAPIView):
 
 
 class UserDeactivateView(generics.GenericAPIView):
-    serializer_class = UserAdminSerializer
     permission_classes = [IsAuthenticated]
 
     def post(self, request, user_id):
