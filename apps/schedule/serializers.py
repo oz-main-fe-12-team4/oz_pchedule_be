@@ -120,7 +120,7 @@ class WeekdaySerializer(serializers.ModelSerializer):
 
 # 메인 일정 Serializer
 class ScheduleSerializer(serializers.ModelSerializer):
-    detail_schedule = DetailScheduleSerializer(many=True, required=False, source="detail_schedule.all")
+    detail_schedule = DetailScheduleSerializer(many=True, required=False)
     recurrence_rule = RecurrenceRuleSerializer(required=False, allow_null=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
