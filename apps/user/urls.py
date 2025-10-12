@@ -22,7 +22,7 @@ urlpatterns = [
     path("me/", UserInfoView.as_view(), name="user-info"),
     path("me/name/", UserNameEditView.as_view(), name="user-name-update"),
     path("me/password/", UserPasswordEditView.as_view(), name="user-password-change"),
-    path("me/withdraw/", UserDeleteView.as_view(), name="user-delete"),
+    path("me/<int:user_id>/withdraw/", UserDeleteView.as_view(), name="user-delete"),
     # 관리자 전용
     path("users/", UserListView.as_view(), name="admin-user-list"),
     path("users/<int:user_id>/activate/", UserActivateView.as_view(), name="admin-user-activate"),
