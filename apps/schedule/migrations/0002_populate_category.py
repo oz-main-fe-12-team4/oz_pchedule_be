@@ -33,7 +33,7 @@ def reverse_func(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("schedule", "0002_populate_category"),  # 이전 마이그레이션 의존
+        ("schedule", "0001_initial"),  # 이전 마이그레이션 의존
     ]
 
     operations = [
