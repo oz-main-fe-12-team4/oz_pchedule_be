@@ -100,7 +100,7 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
 class ScheduleSerializer(serializers.ModelSerializer):
     detail_schedule = DetailScheduleSerializer(many=True, required=False)
     recurrence_rule = RecurrenceRuleSerializer(required=False, allow_null=True, default=None)
-    category_name = serializers.CharField(source="category.name", read_only=True)
+    category_code = serializers.CharField(source="category.code", read_only=True)
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
     share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
 
@@ -112,7 +112,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "start_period",
             "end_period",
             "category",
-            "category_name",
+            "category_code",
             "priority",
             "share_type",
             "is_someday",

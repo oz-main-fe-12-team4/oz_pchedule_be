@@ -20,6 +20,7 @@ SHARE_CHOICES = [
 # 카테고리 테이블
 class Category(models.Model):
     name = models.CharField(max_length=50, unique=True)
+    code = models.CharField(max_length=50, unique=True)
 
     class Meta:
         db_table = "category"
