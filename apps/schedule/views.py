@@ -15,7 +15,7 @@ class ScheduleListCreateAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin or user.is_staff:
+        if user.is_admin:
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 
@@ -31,7 +31,7 @@ class ScheduleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin or user.is_staff:
+        if user.is_admin:
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 
@@ -64,7 +64,7 @@ class DetailScheduleListCreateAPIView(generics.ListCreateAPIView):
         schedule = serializer.validated_data.get("schedule")
         if schedule is None:
             raise PermissionDenied("schedule 필드가 필요합니다.")
-        if schedule.user != self.request.user and not self.request.user.is_staff:
+        if schedule.user != self.request.user and not self.request.user.is_admin:
             raise PermissionDenied("해당 스케줄에 대한 권한이 없습니다.")
         serializer.save()
 
