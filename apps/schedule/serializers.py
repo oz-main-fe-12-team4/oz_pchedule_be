@@ -161,8 +161,10 @@ class ScheduleSerializer(serializers.ModelSerializer):
         if recurrence_data:
             weekdays = recurrence_data.pop("weekdays", [])
             if any(recurrence_data.values()) or weekdays:  # 값이 있으면만 생성
+                code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
                 rule = RecurrenceRule.objects.create(schedule=schedule, **recurrence_data)
-                rule.weekdays.set(weekdays)
+                weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays])
+                rule.weekdays.set(weekdays_objs)
 
         return schedule
 
@@ -184,12 +186,16 @@ class ScheduleSerializer(serializers.ModelSerializer):
             if hasattr(instance, "recurrence_rule"):
                 for attr, value in recurrence_data.items():
                     setattr(instance.recurrence_rule, attr, value)
+                code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
+                weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays])
                 instance.recurrence_rule.save()
-                instance.recurrence_rule.weekdays.set(weekdays)
+                instance.recurrence_rule.weekdays.set(weekdays_objs)
             else:
                 if any(recurrence_data.values()) or weekdays:  # 값이 있는 경우만 생성
+                    code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
+                    weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays])
                     rule = RecurrenceRule.objects.create(schedule=instance, **recurrence_data)
-                    rule.weekdays.set(weekdays)
+                    rule.weekdays.set(weekdays_objs)
 
         return instance
 
