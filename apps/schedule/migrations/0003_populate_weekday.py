@@ -34,7 +34,7 @@ def reverse_func(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("schedule", "0003_populate_weekday"),
+        ("schedule", "0001_initial"),
     ]
 
     operations = [
