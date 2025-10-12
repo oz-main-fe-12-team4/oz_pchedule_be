@@ -18,7 +18,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import SpectacularSwaggerView, SpectacularRedocView, SpectacularAPIView
-from rest_framework_simplejwt.views import TokenRefreshView
+from apps.user.views import CookieTokenRefreshView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -33,7 +33,7 @@ urlpatterns = [
                 path("schedule/", include("apps.schedule.urls")),
                 path("schedule/<int:pk>/", include("apps.interactions.urls")),
                 path("notifications/", include("apps.notification.urls")),
-                path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+                path("token/refresh/", CookieTokenRefreshView.as_view(), name="token_refresh"),
             ]
         ),
     ),
