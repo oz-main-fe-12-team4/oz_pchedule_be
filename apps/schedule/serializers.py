@@ -46,7 +46,7 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         required=False,
         allow_empty=True,
         default=list,  # 빈 리스트일 경우 기본값
-        source="weekdays.all",  # ManyToManyField에서 queryset 가져오기
+        source="weekdays",  # ManyToManyField에서 queryset 가져오기
     )
 
     recurrence_type = serializers.ChoiceField(
@@ -116,7 +116,7 @@ class WeekdaySerializer(serializers.ModelSerializer):
 # 메인 일정 Serializer
 class ScheduleSerializer(serializers.ModelSerializer):
     detail_schedule = DetailScheduleSerializer(many=True, required=False)
-    recurrence_rule = RecurrenceRuleSerializer(required=False)
+    recurrence_rule = RecurrenceRuleSerializer(required=False, allow_null=True)
     category_name = serializers.CharField(source="category.name", read_only=True)
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
     share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
@@ -161,8 +161,9 @@ class ScheduleSerializer(serializers.ModelSerializer):
 
         if recurrence_data:
             weekdays = recurrence_data.pop("weekdays", [])
-            rule = RecurrenceRule.objects.create(schedule=schedule, **recurrence_data)
-            rule.weekdays.set(weekdays)
+            if any(recurrence_data.values()) or weekdays:  # 값이 있으면만 생성
+                rule = RecurrenceRule.objects.create(schedule=schedule, **recurrence_data)
+                rule.weekdays.set(weekdays)
 
         return schedule
 
@@ -187,8 +188,9 @@ class ScheduleSerializer(serializers.ModelSerializer):
                 instance.recurrence_rule.save()
                 instance.recurrence_rule.weekdays.set(weekdays)
             else:
-                rule = RecurrenceRule.objects.create(schedule=instance, **recurrence_data)
-                rule.weekdays.set(weekdays)
+                if any(recurrence_data.values()) or weekdays:  # 값이 있는 경우만 생성
+                    rule = RecurrenceRule.objects.create(schedule=instance, **recurrence_data)
+                    rule.weekdays.set(weekdays)
 
         return instance
 
