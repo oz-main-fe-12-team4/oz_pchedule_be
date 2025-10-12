@@ -42,7 +42,11 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
 
     # 사용자 입력: ["월", "화"] 형태
     weekdays = serializers.ListField(
-        child=serializers.ChoiceField(choices=[name for code, name in WEEKDAYS_CHOICES]), allow_empty=True
+        child=serializers.ChoiceField(choices=[name for code, name in WEEKDAYS_CHOICES]),
+        required=False,
+        allow_empty=True,
+        default=list,  # 빈 리스트일 경우 기본값
+        source="weekdays.all",  # ManyToManyField에서 queryset 가져오기
     )
 
     recurrence_type = serializers.ChoiceField(

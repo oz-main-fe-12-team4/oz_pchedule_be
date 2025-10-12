@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from .models import User, LoginAttempt
 from .permissions import IsCustomAdmin
 
@@ -333,7 +333,7 @@ class UserDeleteView(generics.GenericAPIView):
 
 
 # ✅ 토큰 재발급
-class TokenRefreshView(generics.GenericAPIView):
+class CookieTokenRefreshView(TokenRefreshView):
     serializer_class = DummySerializer
 
     def post(self, request):
@@ -363,22 +363,22 @@ class UserListView(generics.GenericAPIView):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        queryset = User.objects.all().prefetch_related("reports")
+        queryset = User.objects.all()
         serializer = UserAdminSerializer(queryset, many=True)
 
         # ✅ 통계 데이터
         total_users = queryset.count()
-        reported_users = queryset.filter(reports__isnull=False).distinct().count()
+        reported_users = queryset.filter(is_reported=True).count()
         inactive_users = queryset.filter(is_active=False).count()
 
         return Response(
             {
-                "summary": {
+                "data": {
+                    "users": serializer.data,
                     "total_users": total_users,
                     "reported_users": reported_users,
                     "inactive_users": inactive_users,
-                },
-                "users": serializer.data,
+                }
             },
             status=status.HTTP_200_OK,
         )
