@@ -46,7 +46,6 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         required=False,
         allow_empty=True,
         default=list,  # 빈 리스트일 경우 기본값
-        source="weekdays",  # ManyToManyField에서 queryset 가져오기
     )
 
     recurrence_type = serializers.ChoiceField(
