@@ -8,14 +8,16 @@ from django.db import migrations, models
 def forwards_func(apps, schema_editor):
     Category = apps.get_model("schedule", "Category")
     db_alias = schema_editor.connection.alias
+
     categories = [
-        "일상",
-        "취미/여가",
-        "여행",
-        "자기계발/학습",
-        "특별이벤트",
-        "기타",
+        "일상",  # daily
+        "취미/여가",  # hobby
+        "여행",  # travel
+        "자기계발/학습",  # learning
+        "특별이벤트",  # event
+        "기타",  # other
     ]
+
     Category.objects.using(db_alias).bulk_create(
         [Category(name=name) for name in categories],
         ignore_conflicts=True,
@@ -25,6 +27,7 @@ def forwards_func(apps, schema_editor):
 def reverse_func(apps, schema_editor):
     Category = apps.get_model("schedule", "Category")
     db_alias = schema_editor.connection.alias
+
     categories = [
         "일상",
         "취미/여가",
