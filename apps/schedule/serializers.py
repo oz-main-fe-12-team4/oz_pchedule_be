@@ -30,6 +30,15 @@ class DetailScheduleSerializer(serializers.ModelSerializer):
 
 
 # ----------------------
+# Weekday Serializer
+# ----------------------
+class WeekdaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Weekday
+        fields = ["id", "code", "name"]
+
+
+# ----------------------
 # RecurrenceRule Serializer
 # ----------------------
 class RecurrenceRuleSerializer(serializers.ModelSerializer):
@@ -43,45 +52,45 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
         ("일", "일"),
     ]
 
-    # GET 시 weekdays를 리스트로 반환
-    weekdays = serializers.SerializerMethodField()
+    # GET: Weekday 객체
+    weekdays = WeekdaySerializer(many=True, read_only=True)
+    # POST/PUT: 이름 리스트
+    weekdays_input = serializers.ListField(
+        child=serializers.ChoiceField(choices=[name for code, name in WEEKDAYS_CHOICES]),
+        write_only=True,
+        required=False,
+        allow_empty=True,
+        default=list,
+    )
+
     recurrence_type = serializers.ChoiceField(
         choices=RecurrenceRule.RECURRENCE_TYPE_CHOICES, allow_null=True, required=False
     )
 
     class Meta:
         model = RecurrenceRule
-        fields = ["id", "recurrence_type", "weekdays", "month_of_year", "day_of_month"]
-
-    def get_weekdays(self, obj):
-        return [w.name for w in obj.weekdays.all()]
+        fields = ["id", "recurrence_type", "weekdays", "weekdays_input", "month_of_year", "day_of_month"]
 
     def create(self, validated_data):
-        # POST에서 weekdays 리스트 가져오기
-        weekdays_input = self.context["request"].data.get("weekdays", [])
+        weekdays_input = validated_data.pop("weekdays_input", [])
         rule = RecurrenceRule.objects.create(**validated_data)
-
         if weekdays_input:
             code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
             valid_codes = [code_map[w] for w in weekdays_input if w in code_map]
             weekdays_objs = Weekday.objects.filter(code__in=valid_codes)
             rule.weekdays.set(weekdays_objs)
-
         return rule
 
     def update(self, instance, validated_data):
-        weekdays_input = self.context["request"].data.get("weekdays", None)
-
+        weekdays_input = validated_data.pop("weekdays_input", None)
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
-
         if weekdays_input is not None:
             code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
             valid_codes = [code_map[w] for w in weekdays_input if w in code_map]
             weekdays_objs = Weekday.objects.filter(code__in=valid_codes)
             instance.weekdays.set(weekdays_objs)
-
         return instance
 
 
@@ -94,16 +103,6 @@ class ScheduleSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
     share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
-
-    WEEKDAYS_CHOICES = [
-        ("월", "월"),
-        ("화", "화"),
-        ("수", "수"),
-        ("목", "목"),
-        ("금", "금"),
-        ("토", "토"),
-        ("일", "일"),
-    ]
 
     class Meta:
         model = Schedule
@@ -127,7 +126,6 @@ class ScheduleSerializer(serializers.ModelSerializer):
         is_someday = attrs.get("is_someday", False)
         start_period = attrs.get("start_period")
         end_period = attrs.get("end_period")
-
         if not is_someday and (not start_period or not end_period):
             raise serializers.ValidationError("시작일과 종료일은 필수입니다 (is_someday=False)")
         if start_period and end_period and end_period <= start_period:
@@ -145,9 +143,9 @@ class ScheduleSerializer(serializers.ModelSerializer):
                 DetailSchedule.objects.create(schedule=schedule, **d)
 
         if recurrence_data:
-            code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
-            weekdays_input = self.context["request"].data.get("recurrence_rule", {}).get("weekdays", [])
+            weekdays_input = recurrence_data.pop("weekdays_input", [])
             if any(recurrence_data.values()) or weekdays_input:
+                code_map = {name: code for code, name in RecurrenceRuleSerializer.WEEKDAYS_CHOICES}
                 rule = RecurrenceRule.objects.create(schedule=schedule, **recurrence_data)
                 weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
                 rule.weekdays.set(weekdays_objs)
@@ -169,19 +167,18 @@ class ScheduleSerializer(serializers.ModelSerializer):
                     DetailSchedule.objects.create(schedule=instance, **d)
 
         if recurrence_data is not None:
-            weekdays_input = self.context["request"].data.get("recurrence_rule", {}).get("weekdays", [])
+            weekdays_input = recurrence_data.pop("weekdays_input", [])
             if hasattr(instance, "recurrence_rule") and instance.recurrence_rule:
                 for attr, value in recurrence_data.items():
                     setattr(instance.recurrence_rule, attr, value)
                 instance.recurrence_rule.save()
-                if weekdays_input:
-                    code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
-                    weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
-                    instance.recurrence_rule.weekdays.set(weekdays_objs)
+                code_map = {name: code for code, name in RecurrenceRuleSerializer.WEEKDAYS_CHOICES}
+                weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
+                instance.recurrence_rule.weekdays.set(weekdays_objs)
             else:
                 if any(recurrence_data.values()) or weekdays_input:
+                    code_map = {name: code for code, name in RecurrenceRuleSerializer.WEEKDAYS_CHOICES}
                     rule = RecurrenceRule.objects.create(schedule=instance, **recurrence_data)
-                    code_map = {name: code for code, name in self.WEEKDAYS_CHOICES}
                     weekdays_objs = Weekday.objects.filter(code__in=[code_map[w] for w in weekdays_input])
                     rule.weekdays.set(weekdays_objs)
 

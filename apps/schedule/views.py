@@ -15,7 +15,7 @@ class ScheduleListCreateAPIView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_admin:
+        if user.is_admin or user.is_staff:
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 
@@ -31,18 +31,21 @@ class ScheduleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
+        if user.is_admin or user.is_staff:
             return Schedule.objects.all()
         return Schedule.objects.filter(user=user)
 
-    # PUT을 부분 업데이트처럼 허용(편의). 필요하면 전체 갱신으로 바꿀 수 있음.
     def update(self, request, *args, **kwargs):
-        partial = True  # PUT을 부분 업데이트로 처리 (PATCH 사용 안하므로)
+        partial = True  # PUT을 부분 업데이트로 처리
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({"data": serializer.data}, status=status.HTTP_200_OK)
+
+    def perform_update(self, serializer):
+        # PUT 시 user 유지
+        serializer.save(user=self.request.user)
 
 
 # ----------------------
@@ -58,7 +61,6 @@ class DetailScheduleListCreateAPIView(generics.ListCreateAPIView):
         return DetailSchedule.objects.filter(schedule__user=user)
 
     def perform_create(self, serializer):
-        # 생성 시 전달된 schedule이 현재 유저의 소유인지 확인
         schedule = serializer.validated_data.get("schedule")
         if schedule is None:
             raise PermissionDenied("schedule 필드가 필요합니다.")
@@ -70,13 +72,12 @@ class DetailScheduleListCreateAPIView(generics.ListCreateAPIView):
 class DetailScheduleRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = DetailScheduleSerializer
     permission_classes = [IsAuthenticated]
-    http_method_names = ["get", "put", "delete"]  # PATCH 제거, PUT만 허용
+    http_method_names = ["get", "put", "delete"]
 
     def get_queryset(self):
         user = self.request.user
         return DetailSchedule.objects.filter(schedule__user=user)
 
-    # PUT을 부분 업데이트처럼 허용 -> is_completed만 보내 토글 가능
     def update(self, request, *args, **kwargs):
         partial = True
         instance = self.get_object()
