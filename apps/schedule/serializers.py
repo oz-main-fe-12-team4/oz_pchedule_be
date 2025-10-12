@@ -99,7 +99,7 @@ class RecurrenceRuleSerializer(serializers.ModelSerializer):
 # ----------------------
 class ScheduleSerializer(serializers.ModelSerializer):
     detail_schedule = DetailScheduleSerializer(many=True, required=False)
-    recurrence_rule = RecurrenceRuleSerializer(required=False, allow_null=True)
+    recurrence_rule = RecurrenceRuleSerializer(required=False, allow_null=True, default=None)
     category_name = serializers.CharField(source="category.name", read_only=True)
     priority = serializers.ChoiceField(choices=Schedule._meta.get_field("priority").choices)
     share_type = serializers.ChoiceField(choices=Schedule._meta.get_field("share_type").choices)
@@ -121,6 +121,12 @@ class ScheduleSerializer(serializers.ModelSerializer):
             "detail_schedule",
             "recurrence_rule",
         ]
+
+    def to_representation(self, instance):
+        """GET 시 write_only 필드를 완전히 제외"""
+        ret = super().to_representation(instance)
+        ret.pop("weekdays_input", None)
+        return ret
 
     def validate(self, attrs):
         is_someday = attrs.get("is_someday", False)
