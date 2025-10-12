@@ -322,10 +322,27 @@ class UserDeleteView(generics.GenericAPIView):
     serializer_class = DummySerializer
     permission_classes = [IsAuthenticated]
 
-    def delete(self, request):
+    def delete(self, request, user_id, *args, **kwargs):
         try:
-            request.user.delete()
-            return Response({"message": "회원 탈퇴가 완료되었습니다."}, status=status.HTTP_200_OK)
+            # 관리자 여부 체크
+            if request.user.is_admin:
+                # 관리자면 URL에서 받은 user_id로 삭제
+                try:
+                    user_to_delete = User.objects.get(id=user_id)
+                except User.DoesNotExist:
+                    return Response({"error": "유저를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+                user_to_delete.delete()
+                return Response({"message": "유저 삭제가 완료되었습니다."}, status=status.HTTP_200_OK)
+
+            else:
+                # 일반 유저는 자기 계정만 삭제
+                if request.user.id != user_id:
+                    return Response({"error": "자기 계정만 삭제할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+                request.user.delete()
+                return Response({"message": "회원 탈퇴가 완료되었습니다."}, status=status.HTTP_200_OK)
+
         except Exception:
             return Response(
                 {"error": "예기치 못한 서버 오류가 발생했습니다."}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
