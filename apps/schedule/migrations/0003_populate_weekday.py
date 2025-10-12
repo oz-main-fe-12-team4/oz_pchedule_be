@@ -8,13 +8,13 @@ def forwards_func(apps, schema_editor):
     db_alias = schema_editor.connection.alias
 
     weekdays = [
+        ("일", "일"),
         ("월", "월"),
         ("화", "화"),
         ("수", "수"),
         ("목", "목"),
         ("금", "금"),
         ("토", "토"),
-        ("일", "일"),
     ]
 
     Weekday.objects.using(db_alias).bulk_create(
